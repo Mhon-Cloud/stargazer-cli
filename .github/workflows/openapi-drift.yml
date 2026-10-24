@@ -14,7 +14,7 @@ jobs:
   compare:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Compare with the live spec
         run: |
           curl -fsSL https://app.mhon.cloud/api/v1/openapi.json -o live.json
