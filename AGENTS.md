@@ -59,8 +59,26 @@ Many users drive it **through AI agents**, so its output and errors are a contra
 │   ├── common/mod.rs         runs the real binary in a clean env (temp config, no key)
 │   ├── cli.rs                offline behaviour
 │   └── api.rs                against a mock API (mockito)
-└── .github/workflows/        ci.yml, release.yml, openapi-drift.yml
+└── .github/
+    ├── dependabot.yml        weekly dependency / action update PRs
+    └── workflows/
+        ├── test.yml          fmt, clippy, shellcheck, tests (Linux / macOS / Windows), MSRV, cargo audit
+        ├── build.yml         release binaries for 5 targets, smoke-tested, packaged + SHA-256
+        ├── ci.yml            push / PR: test -> build (binaries kept 7 days as run artifacts)
+        ├── release.yml       tag v*: version check -> test -> build -> publish -> verify-install
+        └── openapi-drift.yml weekly: the copied spec vs the live API
 ```
+
+## CI/CD
+
+| Stage | When | What |
+|---|---|---|
+| **Test** (`test.yml`) | every push to main, every PR, every release | `cargo fmt --check`, clippy `-D warnings`, `shellcheck`, `cargo test` on Linux, macOS and Windows, the MSRV build (1.88), `cargo audit` |
+| **Build** (`build.yml`) | after Test passes | `--release` binaries for every target (`cross` for Linux musl); each runnable one is smoke-tested (`--help`, `version` matches Cargo.toml, no key = exit 3); packaged exactly like a release |
+| **Release** (`release.yml`) | a `v*` tag | tag = Cargo.toml version, Test, Build, then publish a GitHub release with provenance attestations |
+| **Verify** (`release.yml`) | after publishing | `install.sh` on Linux x64 / ARM64 and macOS, `install.ps1` on Windows, against the release just published |
+
+A PR is mergeable when CI is green. Never tag a commit whose CI failed. How to cut a release: docs/releasing.md.
 
 ## Adding a command
 

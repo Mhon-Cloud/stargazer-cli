@@ -1,15 +1,19 @@
 name: Release
 
-# Push a tag like v0.2.0 (matching Cargo.toml's version) to build and publish a release. See docs/releasing.md.
+# Push a tag like v0.2.0 (matching Cargo.toml's version; v0.2.0-rc.1 makes a pre-release) to:
+#   check the version -> test -> build every target -> publish a GitHub release (with build provenance)
+#   -> install the published release with install.sh / install.ps1 on Linux, macOS and Windows.
+# See docs/releasing.md.
 on:
   push:
     tags: ["v*"]
 
-permissions:
-  contents: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
-env:
-  CARGO_TERM_COLOR: always
+permissions:
+  contents: read
 
 jobs:
   check-version:
@@ -19,69 +23,71 @@ jobs:
       - name: The tag matches Cargo.toml
         run: |
           version="$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)"
-          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME but Cargo.toml says $version"; exit 1; }
+          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "::error::tag $GITHUB_REF_NAME but Cargo.toml says $version"; exit 1; }
+
+  test:
+    needs: check-version
+    uses: ./.github/workflows/test.yml
 
   build:
-    needs: check-version
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { target: x86_64-unknown-linux-musl, os: ubuntu-latest, cross: true }
-          - { target: aarch64-unknown-linux-musl, os: ubuntu-latest, cross: true }
-          - { target: x86_64-apple-darwin, os: macos-latest, cross: false }
-          - { target: aarch64-apple-darwin, os: macos-latest, cross: false }
-          - { target: x86_64-pc-windows-msvc, os: windows-latest, cross: false }
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-      - if: matrix.cross
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cross
-
-      - name: Build
-        shell: bash
-        run: |
-          if [ "${{ matrix.cross }}" = "true" ]; then
-            cross build --release --locked --target ${{ matrix.target }}
-          else
-            cargo build --release --locked --target ${{ matrix.target }}
-          fi
-
-      - name: Package
-        shell: bash
-        run: |
-          name="stargazer-${{ matrix.target }}"
-          bin_dir="target/${{ matrix.target }}/release"
-          mkdir -p dist
-          if [[ "${{ matrix.target }}" == *windows* ]]; then
-            asset="$name.zip"
-            7z a "dist/$asset" "./$bin_dir/stargazer.exe" >/dev/null
-          else
-            asset="$name.tar.gz"
-            tar -czf "dist/$asset" -C "$bin_dir" stargazer
-          fi
-          cd dist
-          if command -v sha256sum >/dev/null; then sha256sum "$asset" > "$asset.sha256"; else shasum -a 256 "$asset" > "$asset.sha256"; fi
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.target }}
-          path: dist/*
+    needs: test
+    uses: ./.github/workflows/build.yml
+    with:
+      retention-days: 30
 
   publish:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/download-artifact@v4
         with:
+          pattern: stargazer-*
           path: dist
           merge-multiple: true
+      - run: ls -l dist
+      - name: Build provenance (verify with `gh attestation verify <file> -R Mhon-Cloud/stargazer-cli`)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.zip
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/*
           generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+
+  verify-install:
+    # What a user does: run the install script for this release, then the binary.
+    name: verify-install (${{ matrix.os }})
+    needs: publish
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      STARGAZER_VERSION: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: install.sh
+        if: runner.os != 'Windows'
+        run: |
+          export STARGAZER_INSTALL_DIR="$RUNNER_TEMP/stargazer-bin"
+          sh install.sh
+          out="$("$STARGAZER_INSTALL_DIR/stargazer" version --output json)"
+          echo "$out"
+          echo "$out" | grep -q "\"version\":\"${GITHUB_REF_NAME#v}\""
+      - name: install.ps1
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:STARGAZER_INSTALL_DIR = Join-Path $env:RUNNER_TEMP "stargazer-bin"
+          ./install.ps1
+          $v = & (Join-Path $env:STARGAZER_INSTALL_DIR "stargazer.exe") version --output json | ConvertFrom-Json
+          if ($v.version -ne $env:GITHUB_REF_NAME.TrimStart('v')) { throw "installed $($v.version), expected $env:GITHUB_REF_NAME" }
+          Write-Host "installed $($v.version) ($($v.os) $($v.arch))"
