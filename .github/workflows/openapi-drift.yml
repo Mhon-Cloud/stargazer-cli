@@ -1,0 +1,26 @@
+name: OpenAPI drift
+
+# Weekly: does openapi/openapi.json still match the live API? A failure means the platform added or changed
+# operations: run scripts/update-openapi.sh, review the diff, and update the CLI (docs/roadmap.md).
+on:
+  schedule:
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare with the live spec
+        run: |
+          curl -fsSL https://app.mhon.cloud/api/v1/openapi.json -o live.json
+          if ! diff <(jq -S . openapi/openapi.json) <(jq -S . live.json) > drift.diff; then
+            head -100 drift.diff
+            echo "::error::openapi/openapi.json is out of date: run scripts/update-openapi.sh"
+            exit 1
+          fi
+          echo "The spec matches the live API."

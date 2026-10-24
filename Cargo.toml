@@ -1,0 +1,39 @@
+[package]
+name = "stargazer-cli"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+description = "Control Stargazer (Mhon Cloud) from the command line"
+repository = "https://github.com/Mhon-Cloud/stargazer-cli"
+publish = false
+
+[lib]
+name = "stargazer"
+path = "src/lib.rs"
+
+[[bin]]
+name = "stargazer"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive", "env", "wrap_help"] }
+clap_complete = "4.5"
+dirs = "5"
+rpassword = "7"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+ureq = { version = "2.10", features = ["json"] }
+
+[dev-dependencies]
+assert_cmd = "2"
+mockito = "1"
+predicates = "3"
+tempfile = "3"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true
