@@ -8,6 +8,11 @@ updates:
     groups:
       cargo:
         patterns: ["*"]
+        update-types: [minor, patch]
+    # Major versions break APIs (and may raise the MSRV): upgrade them by hand.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:

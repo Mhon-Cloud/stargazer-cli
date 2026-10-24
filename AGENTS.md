@@ -32,7 +32,8 @@ Many users drive it **through AI agents**, so its output and errors are a contra
 ├── Cargo.toml / Cargo.lock   one crate: library `stargazer` + binary `stargazer`
 ├── rustfmt.toml              max_width 120
 ├── install.sh / install.ps1  installers (download a release, check its SHA-256)
-├── openapi/openapi.json      the platform's public API spec (copy; refresh with scripts/update-openapi.sh)
+├── openapi/openapi.json      the platform's public API spec (copy; refreshed by the daily openapi-sync PR)
+├── openapi/contract.json     what the CLI needs from the API (checked by tests/contract.rs and by the platform)
 ├── scripts/                  maintenance scripts
 ├── docs/
 │   ├── architecture.md       how the code is put together, and why
@@ -58,7 +59,8 @@ Many users drive it **through AI agents**, so its output and errors are a contra
 ├── tests/
 │   ├── common/mod.rs         runs the real binary in a clean env (temp config, no key)
 │   ├── cli.rs                offline behaviour
-│   └── api.rs                against a mock API (mockito)
+│   ├── api.rs                against a mock API (mockito)
+│   └── contract.rs           contract.json = the code's calls, and the spec has them
 └── .github/
     ├── dependabot.yml        weekly dependency / action update PRs
     └── workflows/
@@ -66,8 +68,17 @@ Many users drive it **through AI agents**, so its output and errors are a contra
         ├── build.yml         release binaries for 5 targets, smoke-tested, packaged + SHA-256
         ├── ci.yml            push / PR: test -> build (binaries kept 7 days as run artifacts)
         ├── release.yml       tag v*: version check -> test -> build -> publish -> verify-install
-        └── openapi-drift.yml weekly: the copied spec vs the live API
+        └── openapi-sync.yml  daily: live spec changed -> PR with the diff + contract check
 ```
+
+## Keeping up with the API
+
+- **`openapi/contract.json`** lists every operation the CLI calls with the request fields it sends and the response
+  fields it needs. `tests/contract.rs` fails when the code calls something not listed, or the spec copy lacks it.
+- **The platform checks it before deploying** the gateway (`apidocs/check_api.py`, run by its `redeploy.sh`, reads this
+  file from `main`): a change that would break the CLI stops the deploy. Keep `main`'s contract.json current.
+- **`openapi-sync.yml`** (daily): the live spec changed → PR `openapi-sync` with the new copy, the operations added /
+  removed / changed (marked when the CLI uses them) and the contract result. New operation → a roadmap item.
 
 ## CI/CD
 
@@ -90,7 +101,8 @@ A PR is mergeable when CI is green. Never tag a commit whose CI failed. How to c
    `col("HEADER", "dot.path")`; JSON output stays the API's object.
 4. Test it in `tests/api.rs` with a mockito mock: the request (method, path, body), the JSON output, and at least one
    error status mapping to the right exit code. Never call the real API from tests.
-5. Document it in `docs/commands.md` (and the README's table when it's a headline command).
+5. Add the operation (and the fields you rely on) to `openapi/contract.json`: `tests/contract.rs` fails until you do.
+6. Document it in `docs/commands.md` (and the README's table when it's a headline command).
 
 ## Build, lint, test
 

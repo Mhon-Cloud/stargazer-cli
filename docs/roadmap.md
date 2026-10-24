@@ -33,5 +33,6 @@ Pick an item, follow "Adding a command" in [AGENTS.md](../AGENTS.md), tick it he
 
 ## Housekeeping
 
+- [ ] `stargazer uninstall` (today: `install.sh --uninstall` / `install.ps1 -Uninstall`)
 - [ ] A license (the owner's choice; until then the code is all rights reserved)
 - [ ] Generate request / response types from `openapi/openapi.json` if hand-written bodies start to drift

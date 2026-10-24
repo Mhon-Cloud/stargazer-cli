@@ -31,9 +31,22 @@ irm https://raw.githubusercontent.com/Mhon-Cloud/stargazer-cli/main/install.ps1 
 
 Or download an archive from [Releases](https://github.com/Mhon-Cloud/stargazer-cli/releases).
 
+## Uninstall
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Mhon-Cloud/stargazer-cli/main/install.sh | sh -s -- --uninstall
+```
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/Mhon-Cloud/stargazer-cli/main/install.ps1))) -Uninstall
+```
+
+It removes the binary (and on Windows its PATH entry) and the saved key / config. Revoke the key itself in the console
+(Inventory → Additional Services → CLI). Installed with cargo? `cargo uninstall stargazer-cli`.
+
 ## Sign in
 
-Create an API key in the console (**Overview → API**), then:
+Create an API key in the console (**Inventory → Additional Services → CLI**), then:
 
 ```sh
 stargazer login                        # paste the key (it isn't shown)

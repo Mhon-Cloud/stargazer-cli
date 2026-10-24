@@ -35,7 +35,7 @@ pub fn login(args: &LoginArgs, ctx: &Context) -> Result<(), CliError> {
             .map_err(|e| CliError::usage(format!("can't read the key from stdin: {e}")))?;
         line
     } else {
-        rpassword::prompt_password("API key (Overview > API in the console): ")
+        rpassword::prompt_password("API key (console: Inventory > Additional Services > CLI): ")
             .map_err(|e| CliError::usage(format!("can't read the key: {e}")))?
     };
     let key = key.trim().to_string();

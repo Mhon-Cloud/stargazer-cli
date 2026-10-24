@@ -3,6 +3,8 @@
 #   curl -fsSL https://raw.githubusercontent.com/Mhon-Cloud/stargazer-cli/main/install.sh | sh
 # STARGAZER_VERSION=v0.1.0 picks a release (default: the latest); STARGAZER_INSTALL_DIR the folder
 # (default: ~/.local/bin). The archive's SHA-256 is checked before anything is installed.
+# Uninstall (the binary and the saved key / config):
+#   curl -fsSL https://raw.githubusercontent.com/Mhon-Cloud/stargazer-cli/main/install.sh | sh -s -- --uninstall
 set -eu
 
 REPO="Mhon-Cloud/stargazer-cli"
@@ -13,6 +15,22 @@ fail() {
     echo "stargazer install: $1" >&2
     exit 1
 }
+
+if [ "${1:-}" = "--uninstall" ]; then
+    bin="$INSTALL_DIR/stargazer"
+    found="$(command -v stargazer 2>/dev/null || true)"
+    [ -n "$found" ] && [ ! -e "$bin" ] && bin="$found"
+    if [ "$(uname -s)" = "Darwin" ]; then
+        config="$HOME/Library/Application Support/stargazer"
+    else
+        config="${XDG_CONFIG_HOME:-$HOME/.config}/stargazer"
+    fi
+    [ -n "${STARGAZER_CONFIG_DIR:-}" ] && config="$STARGAZER_CONFIG_DIR"
+    if [ -e "$bin" ]; then rm -f "$bin" && echo "Removed $bin"; else echo "No stargazer binary at $bin"; fi
+    if [ -e "$config" ]; then rm -rf "$config" && echo "Removed $config (your saved API key)"; fi
+    echo "Done. Keys stay valid until you revoke them in the console (Inventory > Additional Services > CLI)."
+    exit 0
+fi
 
 case "$(uname -s)" in
     Linux) os="unknown-linux-musl" ;;
@@ -71,4 +89,4 @@ case ":$PATH:" in
     *":$INSTALL_DIR:"*) ;;
     *) echo "Add it to your PATH: export PATH=\"$INSTALL_DIR:\$PATH\"" ;;
 esac
-echo "Next: stargazer login   (create a key in the console: Overview > API)"
+echo "Next: stargazer login   (create a key in the console: Inventory > Additional Services > CLI)"

@@ -7,7 +7,7 @@ use clap::{Args, Parser, Subcommand};
 use crate::output::OutputArg;
 
 const AFTER_HELP: &str = "\
-Sign in once with `stargazer login` (or set STARGAZER_API_KEY). Create a key in the console: Overview > API.
+Sign in once with `stargazer login` (or set STARGAZER_API_KEY). Create a key in the console: Inventory > Additional Services > CLI.
 Output is a table on a terminal and JSON otherwise; force one with --output json|table.
 Exit codes: 0 ok, 1 internal, 2 usage, 3 auth, 4 not found, 5 not enough credit, 6 conflict, 7 rate limited, 8 network.";
 

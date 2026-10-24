@@ -1,0 +1,114 @@
+name: OpenAPI sync
+
+# Daily (and on demand): when the live API's spec differs from openapi/openapi.json, open (or update) the PR
+# "openapi-sync" with the new copy, the operations added / removed / changed, and whether the CLI still has
+# everything openapi/contract.json needs. Contract broken = this run fails and the PR says what to fix.
+# The platform runs the same contract check before deploying the gateway, so a break should be rare.
+#
+# Needs: Settings -> Actions -> General -> "Allow GitHub Actions to create and approve pull requests" (else an
+# issue is opened instead). PRs opened by Actions don't start CI themselves: close and reopen the PR to run it.
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: openapi-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SPEC_URL: https://app.mhon.cloud/api/v1/openapi.json
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch the live spec
+        id: fetch
+        run: |
+          curl -fsSL "$SPEC_URL" -o live.json
+          jq -S . openapi/openapi.json > old.sorted
+          jq -S . live.json > new.sorted
+          if diff -q old.sorted new.sorted > /dev/null; then
+            echo "The spec matches the live API."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Summarise the changes
+        if: steps.fetch.outputs.changed == 'true'
+        run: |
+          cp openapi/openapi.json old.json
+          jq . live.json > openapi/openapi.json
+          python3 - <<'EOF' > summary.md
+          import json
+          old, new = json.load(open("old.json")), json.load(open("openapi/openapi.json"))
+          ops = lambda s: {(m.upper(), p): o for p, item in s["paths"].items() for m, o in item.items()}
+          a, b = ops(old), ops(new)
+          used = {(o["method"], o["path"]) for o in json.load(open("openapi/contract.json"))["operations"]}
+          line = lambda k: f"- `{k[0]} {k[1]}`" + (" (used by the CLI)" if k in used else "")
+          for title, keys in [("Added", sorted(b.keys() - a.keys())), ("Removed", sorted(a.keys() - b.keys())),
+                              ("Changed", sorted(k for k in a.keys() & b.keys() if a[k] != b[k]))]:
+              if keys:
+                  print(f"### {title}\n" + "\n".join(line(k) for k in keys) + "\n")
+          if a == b:
+              print("Only descriptions / schemas outside the operations changed.\n")
+          EOF
+          cat summary.md
+
+      - uses: dtolnay/rust-toolchain@stable
+        if: steps.fetch.outputs.changed == 'true'
+      - uses: Swatinem/rust-cache@v2
+        if: steps.fetch.outputs.changed == 'true'
+
+      - name: Contract check
+        id: contract
+        if: steps.fetch.outputs.changed == 'true'
+        run: |
+          # shellcheck disable=SC2016 # the backticks are Markdown
+          set +e
+          cargo test --locked --test contract 2>&1 | tee contract.log
+          code=${PIPESTATUS[0]}
+          set -e
+          if [ "$code" = 0 ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+            printf '### CLI contract\nOK: the API still has everything `openapi/contract.json` needs.\n' >> summary.md
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            { printf '### CLI contract: BROKEN\nThe CLI uses something the API no longer has. Update the commands and `openapi/contract.json`, then release a new version.\n\n```\n'
+              grep -A30 "no longer has\|but not in" contract.log | head -40
+              printf '```\n'; } >> summary.md
+          fi
+
+      - name: Open or update the PR
+        if: steps.fetch.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B openapi-sync
+          git add openapi/openapi.json
+          git commit -m "Refresh openapi/openapi.json from the live API"
+          git push --force origin openapi-sync
+          { echo "The live API's spec ($SPEC_URL) changed. Opened by the OpenAPI sync workflow."; echo; cat summary.md
+            echo; echo "Next: add CLI commands for new operations (docs/roadmap.md), fix anything broken, merge. Close and reopen this PR to run CI."; } > body.md
+          title="Refresh the API spec ($(date -u +%Y-%m-%d))"
+          if gh pr view openapi-sync --json state -q .state 2>/dev/null | grep -q OPEN; then
+            gh pr edit openapi-sync --title "$title" --body-file body.md
+          elif ! gh pr create --head openapi-sync --base main --title "$title" --body-file body.md; then
+            echo "::warning::couldn't open a PR (allow Actions to create PRs in the repo settings); opening an issue"
+            gh issue create --title "$title" --body-file body.md
+          fi
+
+      - name: Fail when the contract is broken
+        if: steps.contract.outputs.ok == 'false'
+        run: |
+          echo "::error::the live API no longer has what the CLI uses (see the PR)"
+          exit 1
