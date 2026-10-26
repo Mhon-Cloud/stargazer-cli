@@ -16,6 +16,7 @@ const TIMEOUT: Duration = Duration::from_secs(30);
 pub struct Client {
     agent: ureq::Agent,
     base: String,
+    /// Empty = no Authorization header (the few public operations, e.g. pricing).
     key: String,
 }
 
@@ -26,6 +27,11 @@ impl Client {
             .user_agent(concat!("stargazer-cli/", env!("CARGO_PKG_VERSION")))
             .build();
         Client { agent, base: base.trim_end_matches('/').to_string(), key: key.to_string() }
+    }
+
+    /// A client for the operations that need no key.
+    pub fn anonymous(base: &str) -> Self {
+        Client::new(base, "")
     }
 
     fn url(&self, path: &str) -> String {
@@ -56,12 +62,39 @@ impl Client {
         self.send(self.agent.delete(&self.url(path)), None)
     }
 
+    /// DELETE with a JSON body (e.g. a project's confirm_name).
+    pub fn delete_with(&self, path: &str, body: Value) -> Result<Value, CliError> {
+        self.send(self.agent.delete(&self.url(path)), Some(body))
+    }
+
+    /// PUT raw bytes (an upload chunk), with query parameters.
+    pub fn put_bytes(&self, path: &str, query: &[(&str, &str)], bytes: &[u8]) -> Result<Value, CliError> {
+        let mut req = self.authorize(self.agent.put(&self.url(path))).set("Content-Type", "application/octet-stream");
+        for (k, v) in query {
+            req = req.query(k, v);
+        }
+        self.finish(req.send_bytes(bytes))
+    }
+
+    fn authorize(&self, req: ureq::Request) -> ureq::Request {
+        let req = req.set("Accept", "application/json");
+        if self.key.is_empty() {
+            req
+        } else {
+            req.set("Authorization", &format!("Bearer {}", self.key))
+        }
+    }
+
     fn send(&self, req: ureq::Request, body: Option<Value>) -> Result<Value, CliError> {
-        let req = req.set("Authorization", &format!("Bearer {}", self.key)).set("Accept", "application/json");
+        let req = self.authorize(req);
         let result = match body {
             Some(b) => req.send_json(b),
             None => req.call(),
         };
+        self.finish(result)
+    }
+
+    fn finish(&self, result: Result<ureq::Response, ureq::Error>) -> Result<Value, CliError> {
         match result {
             Ok(resp) => read_json(resp),
             Err(ureq::Error::Status(status, resp)) => Err(api_error(status, resp)),

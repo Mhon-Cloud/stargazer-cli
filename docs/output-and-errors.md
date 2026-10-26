@@ -11,7 +11,8 @@ Scripts and AI agents parse what `stargazer` prints, so this page is a promise. 
 | `json` | one JSON document on stdout |
 | `table` | aligned columns for people (not stable: don't parse it) |
 
-`STARGAZER_OUTPUT=json` sets it for every command.
+`STARGAZER_OUTPUT=json` sets it for every command. `--fields id,name,project.name` keeps only those paths in JSON output
+(nested paths keep their nesting; missing ones are `null`) and picks the columns in table mode.
 
 ## JSON output
 
@@ -21,6 +22,9 @@ Scripts and AI agents parse what `stargazer` prints, so this page is a promise. 
   about are kept, so new API fields appear without a CLI release.
 - **Messages** (`login`, `logout`, `version`) are small objects, e.g. `{"logged_out": true}`.
 - `containers logs` is `{"logs": "..."}`.
+- **Orders** print what they made: `servers create` → `{"order": {...}, "login": {"username", "password"?}}`,
+  `containers create` → `{"container", "dns_name", "login", "uploads"}`. A password the CLI generated appears **once**,
+  here (and in your inbox); one you gave on stdin never does. `--dry-run` prints the quote instead.
 - Nothing else is printed on stdout: no colours, spinners, progress or tips.
 
 ## Errors
@@ -49,11 +53,19 @@ In table mode the same error prints as `error: <message>`.
 | 6 | `conflict` | Not possible right now (409): e.g. delete a running server, another action in progress | Wait or change state first |
 | 7 | `rate_limited` | Too many requests (429), e.g. a second resize within 2 minutes | Wait and retry |
 | 8 | `network` | The API couldn't be reached (DNS, TLS, timeout) | Check the connection / `STARGAZER_API_URL` |
+| 9 | `timeout` | `--wait` gave up (`--timeout`); the work may still finish | Check again with `show` / `list` |
 
 clap's own argument errors (unknown flag, missing argument) also exit with 2, with clap's plain-text message.
 
+## Confirmation
+
+Anything that **spends credit** (orders, a paid resize, renewals, reserving an IP) or **can't be undone** (deletes,
+restores, releases) needs `--yes`. Without it nothing is sent: the command exits 2 and the message says what would
+happen, with the price. A free container needs no `--yes`. `servers create --dry-run` prices an order and stops.
+
 ## Actions are queued
 
-Server actions (start, stop, rename, resize, delete) are queued by the platform: the command returns as soon as the
-action is accepted (HTTP 202), with the server's `last_action` (`pending`). Poll `servers list` to see it finish (a
-`--wait` flag is on the roadmap).
+Server actions (start, stop, rename, resize, delete), new orders and container start / stop are queued by the platform:
+the command returns as soon as the work is accepted (HTTP 202 / 201). `--wait` follows it (polling every 4 s) until it's
+done, then prints the finished item; a failure ends the wait with exit 6 and the platform's reason (a failed order is
+refunded); `--timeout` (default 900 s) ends it with exit 9.

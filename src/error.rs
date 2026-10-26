@@ -22,6 +22,8 @@ pub enum ErrorKind {
     RateLimited,
     /// The API couldn't be reached (DNS, TLS, timeout...).
     Network,
+    /// `--wait` gave up before the work was done (it may still finish).
+    Timeout,
 }
 
 impl ErrorKind {
@@ -35,6 +37,7 @@ impl ErrorKind {
             ErrorKind::Conflict => 6,
             ErrorKind::RateLimited => 7,
             ErrorKind::Network => 8,
+            ErrorKind::Timeout => 9,
         }
     }
 
@@ -49,6 +52,7 @@ impl ErrorKind {
             ErrorKind::Conflict => "conflict",
             ErrorKind::RateLimited => "rate_limited",
             ErrorKind::Network => "network",
+            ErrorKind::Timeout => "timeout",
         }
     }
 }
@@ -120,6 +124,7 @@ mod tests {
             ErrorKind::Conflict,
             ErrorKind::RateLimited,
             ErrorKind::Network,
+            ErrorKind::Timeout,
         ];
         let mut codes: Vec<i32> = kinds.iter().map(|k| k.exit_code()).collect();
         codes.sort();

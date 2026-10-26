@@ -3,7 +3,7 @@
  "info": {
   "title": "Mhon Cloud API",
   "version": "1.0.0",
-  "description": "Manage your Mhon Cloud servers, containers, DNS names and billing from code.\n\n**Authentication:** create an API key in the console (Overview → API) and send it as `Authorization: Bearer mhc_...`. A key acts as you, on the operations listed here only.\n\n**Credit:** read it with `GET /api/v1/me/credit`. Top-ups and withdrawals are made on the website (Overview → Billing), not through the API.\n\nAmounts are in Thai baht. Times are RFC 3339."
+  "description": "Manage your Mhon Cloud servers, containers, DNS names and billing from code.\n\n**Authentication:** create an API key in the console (Inventory → Interfaces → API) and send it as `Authorization: Bearer mhc_...`. A key acts as you, on the operations listed here only.\n\n**Credit:** read it with `GET /api/v1/me/credit`. Top-ups and withdrawals are made on the website (Overview → Billing), not through the API.\n\nAmounts are in Thai baht. Times are RFC 3339."
  },
  "servers": [
   {
@@ -46,6 +46,12 @@
   },
   {
    "name": "Network"
+  },
+  {
+   "name": "Security"
+  },
+  {
+   "name": "Backups"
   },
   {
    "name": "Inbox"
@@ -443,6 +449,51 @@
       "$ref": "#/components/responses/Forbidden"
      }
     }
+   },
+   "post": {
+    "tags": [
+     "Projects"
+    ],
+    "summary": "Create a project (free)",
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "project": {
+           "$ref": "#/components/schemas/Project"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ProjectRequest"
+       }
+      }
+     }
+    }
    }
   },
   "/api/v1/projects/{id}": {
@@ -489,6 +540,139 @@
       "description": "The resource's id"
      }
     ]
+   },
+   "put": {
+    "tags": [
+     "Projects"
+    ],
+    "summary": "Rename / describe a project",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "project": {
+           "$ref": "#/components/schemas/Project"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ProjectRequest"
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "Projects"
+    ],
+    "summary": "Delete a project and everything in it",
+    "responses": {
+     "202": {
+      "description": "Being deleted",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "project": {
+           "$ref": "#/components/schemas/Project"
+          },
+          "message": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "description": "Stops and deletes its servers (unused time refunded), deletes its containers and DNS names, cancels its waiting orders. Owner / company admin; type the name to confirm.",
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "confirm_name": {
+          "type": "string",
+          "description": "The project's name, exactly"
+         }
+        },
+        "required": [
+         "confirm_name"
+        ]
+       }
+      }
+     }
+    }
    }
   },
   "/api/v1/availability-zones": {
@@ -1152,7 +1336,7 @@
       "content": {
        "application/json": {
         "schema": {
-         "type": "object"
+         "$ref": "#/components/schemas/ComputeOptions"
         }
        }
       }
@@ -1341,14 +1525,14 @@
     "tags": [
      "Market"
     ],
-    "summary": "What a container order can choose",
+    "summary": "What a container order can choose (the free plan, locations; rates and packs are in the compute options)",
     "responses": {
      "200": {
       "description": "OK",
       "content": {
        "application/json": {
         "schema": {
-         "type": "object"
+         "$ref": "#/components/schemas/ContainerOptions"
         }
        }
       }
@@ -1672,6 +1856,1607 @@
     }
    }
   },
+  "/api/v1/market/public-ip/quote": {
+   "get": {
+    "tags": [
+     "Market"
+    ],
+    "summary": "Price of reserving a public IP, and free addresses per location",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PublicIPQuote"
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     }
+    }
+   }
+  },
+  "/api/v1/market/public-ip": {
+   "post": {
+    "tags": [
+     "Market"
+    ],
+    "summary": "Reserve a public IP (prepaid monthly from your credit)",
+    "responses": {
+     "201": {
+      "description": "Reserved",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "address": {
+           "type": "string"
+          },
+          "project_id": {
+           "type": "string",
+           "format": "uuid"
+          },
+          "total": {
+           "type": "string",
+           "description": "Baht, 2 decimals",
+           "example": "350.00"
+          },
+          "reserved_until": {
+           "type": "string",
+           "format": "date-time"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "402": {
+      "$ref": "#/components/responses/E402"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "description": "Renewed each month from your credit; released when it can't be paid. Owner / admin of the project.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "project_id": {
+          "type": "string",
+          "format": "uuid"
+         },
+         "availability_zone_id": {
+          "type": "string",
+          "format": "uuid"
+         }
+        },
+        "required": [
+         "project_id",
+         "availability_zone_id"
+        ]
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/public-ips/{id}": {
+   "delete": {
+    "tags": [
+     "Network"
+    ],
+    "summary": "Release a reserved public IP (no refund)",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Message"
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ]
+   }
+  },
+  "/api/v1/public-ips/{id}/bind": {
+   "post": {
+    "tags": [
+     "Network"
+    ],
+    "summary": "Bind a reserved public IP to a server of its project and zone",
+    "responses": {
+     "202": {
+      "description": "Queued: applied after the server restarts",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "public_ip": {
+           "$ref": "#/components/schemas/PublicIP"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "server_id": {
+          "type": "string",
+          "format": "uuid"
+         }
+        },
+        "required": [
+         "server_id"
+        ]
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "Network"
+    ],
+    "summary": "Unbind a public IP from its server",
+    "responses": {
+     "202": {
+      "description": "Queued",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "public_ip": {
+           "$ref": "#/components/schemas/PublicIP"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ]
+   }
+  },
+  "/api/v1/market/containers/uploads": {
+   "post": {
+    "tags": [
+     "Market"
+    ],
+    "summary": "Start uploading a folder for a container order",
+    "responses": {
+     "201": {
+      "description": "Started",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid"
+          },
+          "chunk_bytes": {
+           "type": "integer",
+           "description": "Send chunks of this size"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "description": "Pack the folder as a tar (regular files and folders only, no absolute or .. names), then PUT it in chunks and complete it. Up to 1 GB; unused uploads expire after a day.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "size_bytes": {
+          "type": "integer",
+          "description": "The tar's size"
+         }
+        },
+        "required": [
+         "size_bytes"
+        ]
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/market/containers/uploads/{id}": {
+   "put": {
+    "tags": [
+     "Market"
+    ],
+    "summary": "Send one chunk of an upload",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "received_bytes": {
+           "type": "integer"
+          },
+          "size_bytes": {
+           "type": "integer"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "description": "The body is the raw bytes (application/octet-stream) at offset; resend from received_bytes after an error.",
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     },
+     {
+      "name": "offset",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "minimum": 0
+      },
+      "description": "Where this chunk starts"
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/octet-stream": {
+       "schema": {
+        "type": "string",
+        "format": "binary"
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/market/containers/uploads/{id}/complete": {
+   "post": {
+    "tags": [
+     "Market"
+    ],
+    "summary": "Finish an upload (checks the tar)",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid"
+          },
+          "files": {
+           "type": "integer"
+          },
+          "size_bytes": {
+           "type": "integer"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ]
+   }
+  },
+  "/api/v1/credentials": {
+   "get": {
+    "tags": [
+     "Security"
+    ],
+    "summary": "Your SSH keys (credentials)",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "credentials": {
+           "type": "array",
+           "items": {
+            "$ref": "#/components/schemas/Credential"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "Security"
+    ],
+    "summary": "Add an SSH public key to a project",
+    "responses": {
+     "201": {
+      "description": "Added",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "credential": {
+           "$ref": "#/components/schemas/Credential"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "project_id": {
+          "type": "string",
+          "format": "uuid"
+         },
+         "name": {
+          "type": "string"
+         },
+         "public_key": {
+          "type": "string",
+          "description": "ssh-ed25519 AAAA... (never a private key)"
+         }
+        },
+        "required": [
+         "project_id",
+         "name",
+         "public_key"
+        ]
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/credentials/{id}": {
+   "put": {
+    "tags": [
+     "Security"
+    ],
+    "summary": "Rename an SSH key",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "credential": {
+           "$ref": "#/components/schemas/Credential"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "name": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "name"
+        ]
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "Security"
+    ],
+    "summary": "Delete an SSH key (unbind it everywhere first)",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Message"
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ]
+   }
+  },
+  "/api/v1/credentials/{id}/bindings": {
+   "post": {
+    "tags": [
+     "Security"
+    ],
+    "summary": "Install an SSH key on a server",
+    "responses": {
+     "202": {
+      "description": "Queued: applied at the next boot",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "credential": {
+           "$ref": "#/components/schemas/Credential"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "server_id": {
+          "type": "string",
+          "format": "uuid"
+         }
+        },
+        "required": [
+         "server_id"
+        ]
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/credentials/{id}/bindings/{serverId}": {
+   "delete": {
+    "tags": [
+     "Security"
+    ],
+    "summary": "Remove an SSH key from a server",
+    "responses": {
+     "202": {
+      "description": "Queued",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "credential": {
+           "$ref": "#/components/schemas/Credential"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     },
+     {
+      "name": "serverId",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The server's id"
+     }
+    ]
+   }
+  },
+  "/api/v1/security-groups": {
+   "get": {
+    "tags": [
+     "Security"
+    ],
+    "summary": "Your security groups",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "security_groups": {
+           "type": "array",
+           "items": {
+            "$ref": "#/components/schemas/SecurityGroup"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "Security"
+    ],
+    "summary": "Create a security group (allow-all outbound, no inbound)",
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "security_group": {
+           "$ref": "#/components/schemas/SecurityGroup"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "project_id": {
+          "type": "string",
+          "format": "uuid"
+         },
+         "name": {
+          "type": "string"
+         },
+         "description": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "project_id",
+         "name"
+        ]
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/security-groups/{id}": {
+   "put": {
+    "tags": [
+     "Security"
+    ],
+    "summary": "Rename / describe a security group",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "security_group": {
+           "$ref": "#/components/schemas/SecurityGroup"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "name": {
+          "type": "string"
+         },
+         "description": {
+          "type": "string"
+         }
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "Security"
+    ],
+    "summary": "Delete a security group (detached and unreferenced)",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Message"
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ]
+   }
+  },
+  "/api/v1/security-groups/{id}/rules": {
+   "post": {
+    "tags": [
+     "Security"
+    ],
+    "summary": "Add a rule",
+    "responses": {
+     "201": {
+      "description": "Added",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "security_group": {
+           "$ref": "#/components/schemas/SecurityGroup"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RuleRequest"
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/security-groups/{id}/rules/{ruleId}": {
+   "delete": {
+    "tags": [
+     "Security"
+    ],
+    "summary": "Remove a rule",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "security_group": {
+           "$ref": "#/components/schemas/SecurityGroup"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     },
+     {
+      "name": "ruleId",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The rule's id"
+     }
+    ]
+   }
+  },
+  "/api/v1/security-groups/{id}/attachments": {
+   "post": {
+    "tags": [
+     "Security"
+    ],
+    "summary": "Attach a security group to a server (up to 5 per server)",
+    "responses": {
+     "201": {
+      "description": "Attached",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "security_group": {
+           "$ref": "#/components/schemas/SecurityGroup"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "server_id": {
+          "type": "string",
+          "format": "uuid"
+         }
+        },
+        "required": [
+         "server_id"
+        ]
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/security-groups/{id}/attachments/{serverId}": {
+   "delete": {
+    "tags": [
+     "Security"
+    ],
+    "summary": "Detach a security group from a server",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "security_group": {
+           "$ref": "#/components/schemas/SecurityGroup"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     },
+     {
+      "name": "serverId",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The server's id"
+     }
+    ]
+   }
+  },
+  "/api/v1/backups": {
+   "get": {
+    "tags": [
+     "Backups"
+    ],
+    "summary": "Backups of your servers, and the backup policies covering them",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "backups": {
+           "type": "array",
+           "items": {
+            "$ref": "#/components/schemas/Backup"
+           }
+          },
+          "policies": {
+           "type": "array",
+           "items": {
+            "type": "object"
+           }
+          },
+          "storages": {
+           "type": "object",
+           "additionalProperties": {
+            "type": "array",
+            "items": {
+             "type": "string"
+            }
+           },
+           "description": "Server id -> the backup storages it can use"
+          },
+          "jobs": {
+           "type": "array",
+           "items": {
+            "type": "object"
+           }
+          },
+          "errors": {
+           "type": "array",
+           "items": {
+            "type": "object"
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     }
+    }
+   }
+  },
+  "/api/v1/servers/{id}/backups": {
+   "post": {
+    "tags": [
+     "Backups"
+    ],
+    "summary": "Back a server up now",
+    "responses": {
+     "202": {
+      "description": "Queued",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Message"
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "storage": {
+          "type": "string",
+          "description": "A storage from GET /api/v1/backups (storages)"
+         },
+         "notes": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "storage"
+        ]
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/servers/{id}/backups/restore": {
+   "post": {
+    "tags": [
+     "Backups"
+    ],
+    "summary": "Restore a backup over the (stopped) server",
+    "responses": {
+     "202": {
+      "description": "Queued",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Message"
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "volid": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "volid"
+        ]
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/servers/{id}/backups/delete": {
+   "post": {
+    "tags": [
+     "Backups"
+    ],
+    "summary": "Delete a backup",
+    "responses": {
+     "202": {
+      "description": "Queued",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Message"
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     },
+     "409": {
+      "$ref": "#/components/responses/E409"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "volid": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "volid"
+        ]
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/announcements/{id}/read": {
+   "post": {
+    "tags": [
+     "Inbox"
+    ],
+    "summary": "Mark an announcement read",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Message"
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ]
+   }
+  },
+  "/api/v1/announcements/{id}": {
+   "delete": {
+    "tags": [
+     "Inbox"
+    ],
+    "summary": "Remove an announcement from your inbox",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Message"
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     }
+    },
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The resource's id"
+     }
+    ]
+   }
+  },
   "/api/v1/announcements": {
    "get": {
     "tags": [
@@ -1771,7 +3556,7 @@
     "type": "http",
     "scheme": "bearer",
     "bearerFormat": "mhc_...",
-    "description": "A personal API key from Overview → API"
+    "description": "A personal API key from Inventory → Interfaces → API"
    }
   },
   "schemas": {
@@ -2619,6 +4404,10 @@
       "type": "boolean",
       "description": "A free vm-xxxxxxxx.mhon.cloud name instead of a public IP"
      },
+     "dns_label": {
+      "type": "string",
+      "description": "A free <label>.mhon.cloud name instead of a public IP (wins over random_dns)"
+     },
      "period_months": {
       "type": "integer",
       "enum": [
@@ -2938,6 +4727,31 @@
      "login_password": {
       "type": "string",
       "description": "Ubuntu image only"
+     },
+     "startup_script": {
+      "type": "string",
+      "description": "Ubuntu image only: a bash script (up to 16 KB) run as root at every start, in the background"
+     },
+     "files": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "upload_id": {
+         "type": "string",
+         "description": "A completed upload (POST /api/v1/market/containers/uploads)",
+         "format": "uuid"
+        },
+        "mount_path": {
+         "type": "string",
+         "description": "Absolute path in the container"
+        }
+       },
+       "required": [
+        "upload_id",
+        "mount_path"
+       ]
+      }
      }
     },
     "required": [
@@ -2950,7 +4764,7 @@
      "availability_zone_id",
      "period_months"
     ],
-    "description": "Free when within the free plan (1 vCPU / 1 GB / 5 GB); otherwise prepaid from your credit. Uploading folders is only possible from the console."
+    "description": "Free when within the free plan (1 vCPU / 1 GB / 5 GB); otherwise prepaid from your credit. Folders (up to 3, 1 GB each) are uploaded first, then named in files."
    },
    "DNSRecord": {
     "type": "object",
@@ -3087,20 +4901,631 @@
       ]
      },
      "project": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string",
+        "format": "uuid"
+       },
+       "name": {
+        "type": "string"
+       }
+      }
      },
-     "server_id": {
-      "type": "string",
-      "format": "uuid",
+     "server": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string",
+        "format": "uuid"
+       },
+       "name": {
+        "type": "string"
+       }
+      },
+      "nullable": true
+     },
+     "zone": {
+      "$ref": "#/components/schemas/Zone",
       "nullable": true
      },
      "reserved_until": {
       "type": "string",
       "format": "date-time",
       "nullable": true
+     },
+     "bind_status": {
+      "type": "string",
+      "enum": [
+       "applying",
+       "applied",
+       "removing",
+       "failed"
+      ],
+      "nullable": true
+     },
+     "bind_error": {
+      "type": "string",
+      "nullable": true
      }
     },
     "description": "Other fields may be present"
+   },
+   "Pack": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "cpu_cores": {
+      "type": "integer"
+     },
+     "ram_gb": {
+      "type": "integer"
+     },
+     "storage_gb": {
+      "type": "integer"
+     },
+     "storage_type": {
+      "type": "string",
+      "description": "Compute only",
+      "enum": [
+       "ssd",
+       "hdd"
+      ]
+     },
+     "public_ip": {
+      "type": "boolean",
+      "description": "Compute only"
+     },
+     "discount": {
+      "type": "string",
+      "description": "Percent, e.g. \"10.00\"; applies when the order is exactly the pack"
+     }
+    }
+   },
+   "ComputeOptions": {
+    "type": "object",
+    "properties": {
+     "os": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "id": {
+         "type": "string",
+         "description": "What an order sends as os"
+        },
+        "name": {
+         "type": "string",
+         "example": "ubuntu24.04"
+        }
+       }
+      }
+     },
+     "rates": {
+      "type": "object",
+      "properties": {
+       "cpu": {
+        "type": "string",
+        "description": "Baht, 2 decimals",
+        "example": "350.00"
+       },
+       "ram": {
+        "type": "string",
+        "description": "Baht, 2 decimals",
+        "example": "350.00"
+       },
+       "hdd": {
+        "type": "string",
+        "description": "Baht, 2 decimals",
+        "example": "350.00"
+       },
+       "ssd": {
+        "type": "string",
+        "description": "Baht, 2 decimals",
+        "example": "350.00"
+       },
+       "public_ip": {
+        "type": "string",
+        "description": "Baht, 2 decimals",
+        "example": "350.00"
+       },
+       "discount_6_months": {
+        "type": "string",
+        "description": "Percent",
+        "example": "350.00"
+       },
+       "discount_year": {
+        "type": "string",
+        "description": "Percent",
+        "example": "350.00"
+       }
+      },
+      "description": "Monthly, baht"
+     },
+     "packages": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/Pack"
+      }
+     },
+     "container_rates": {
+      "type": "object",
+      "properties": {
+       "cpu": {
+        "type": "string",
+        "description": "Baht, 2 decimals",
+        "example": "350.00"
+       },
+       "ram": {
+        "type": "string",
+        "description": "Baht, 2 decimals",
+        "example": "350.00"
+       },
+       "storage": {
+        "type": "string",
+        "description": "Baht, 2 decimals",
+        "example": "350.00"
+       },
+       "discount_6_months": {
+        "type": "string",
+        "description": "Percent",
+        "example": "350.00"
+       },
+       "discount_year": {
+        "type": "string",
+        "description": "Percent",
+        "example": "350.00"
+       }
+      }
+     },
+     "container_packages": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/Pack"
+      }
+     },
+     "limits": {
+      "type": "object",
+      "properties": {
+       "min_cores": {
+        "type": "integer"
+       },
+       "max_cores": {
+        "type": "integer"
+       },
+       "min_ram_gb": {
+        "type": "integer"
+       },
+       "max_ram_gb": {
+        "type": "integer"
+       },
+       "max_disks": {
+        "type": "integer"
+       },
+       "min_disk_gb": {
+        "type": "integer"
+       },
+       "max_disk_gb": {
+        "type": "integer"
+       },
+       "max_credentials": {
+        "type": "integer"
+       }
+      }
+     },
+     "dns_zone": {
+      "type": "string",
+      "example": "mhon.cloud"
+     },
+     "credit": {
+      "type": "string",
+      "description": "Yours",
+      "example": "350.00"
+     }
+    }
+   },
+   "ContainerOptions": {
+    "type": "object",
+    "properties": {
+     "free_available": {
+      "type": "boolean",
+      "description": "You may order one more free container"
+     },
+     "free_used": {
+      "type": "integer"
+     },
+     "free_limit": {
+      "type": "integer"
+     },
+     "free": {
+      "type": "object",
+      "properties": {
+       "cpu_cores": {
+        "type": "integer"
+       },
+       "ram_gb": {
+        "type": "integer"
+       },
+       "storage_gb": {
+        "type": "integer"
+       }
+      },
+      "description": "The free plan's size"
+     },
+     "zone_ids": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "description": "Locations that run containers",
+       "format": "uuid"
+      }
+     }
+    }
+   },
+   "PublicIPQuote": {
+    "type": "object",
+    "properties": {
+     "rate": {
+      "type": "string",
+      "description": "The address, per month",
+      "example": "350.00"
+     },
+     "fee": {
+      "type": "string",
+      "description": "Reservation fee, per month",
+      "example": "350.00"
+     },
+     "total": {
+      "type": "string",
+      "description": "Per month; the first month is paid now",
+      "example": "350.00"
+     },
+     "credit": {
+      "type": "string",
+      "description": "Baht, 2 decimals",
+      "example": "350.00"
+     },
+     "enough_credit": {
+      "type": "boolean"
+     },
+     "available": {
+      "type": "integer",
+      "description": "Free addresses, all locations"
+     },
+     "zones": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "id": {
+         "type": "string",
+         "format": "uuid"
+        },
+        "name": {
+         "type": "string"
+        },
+        "region": {
+         "type": "string"
+        },
+        "available": {
+         "type": "integer"
+        }
+       }
+      }
+     }
+    }
+   },
+   "ProjectRequest": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "kind": {
+      "type": "string",
+      "description": "Create only",
+      "enum": [
+       "personal",
+       "company"
+      ]
+     },
+     "company_id": {
+      "type": "string",
+      "description": "Create only, kind=company",
+      "format": "uuid"
+     }
+    },
+    "required": [
+     "name"
+    ]
+   },
+   "Credential": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid"
+     },
+     "name": {
+      "type": "string"
+     },
+     "type": {
+      "type": "string",
+      "enum": [
+       "ssh"
+      ]
+     },
+     "public_key": {
+      "type": "string"
+     },
+     "fingerprint": {
+      "type": "string"
+     },
+     "project": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string",
+        "format": "uuid"
+       },
+       "name": {
+        "type": "string"
+       }
+      }
+     },
+     "my_role": {
+      "type": "string"
+     },
+     "bindings": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "server": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "string",
+           "format": "uuid"
+          },
+          "name": {
+           "type": "string"
+          }
+         }
+        },
+        "status": {
+         "type": "string",
+         "enum": [
+          "pending",
+          "applied",
+          "failed"
+         ]
+        },
+        "error": {
+         "type": "string",
+         "nullable": true
+        }
+       }
+      }
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time"
+     }
+    },
+    "description": "An SSH public key of a project; bind it to a server to install it (applied at the next boot)"
+   },
+   "SecurityGroupRule": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid"
+     },
+     "direction": {
+      "type": "string",
+      "enum": [
+       "ingress",
+       "egress"
+      ]
+     },
+     "protocol": {
+      "type": "string",
+      "enum": [
+       "all",
+       "tcp",
+       "udp",
+       "icmp"
+      ]
+     },
+     "from_port": {
+      "type": "integer",
+      "nullable": true
+     },
+     "to_port": {
+      "type": "integer",
+      "nullable": true
+     },
+     "cidr": {
+      "type": "string",
+      "nullable": true
+     },
+     "peer_group": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string",
+        "format": "uuid"
+       },
+       "name": {
+        "type": "string"
+       }
+      },
+      "nullable": true
+     },
+     "description": {
+      "type": "string"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time"
+     }
+    }
+   },
+   "SecurityGroup": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid"
+     },
+     "name": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "project": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string",
+        "format": "uuid"
+       },
+       "name": {
+        "type": "string"
+       }
+      }
+     },
+     "my_role": {
+      "type": "string"
+     },
+     "rules": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/SecurityGroupRule"
+      }
+     },
+     "attachments": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "description": "Servers it's attached to, with their firewall state"
+      }
+     },
+     "referenced_by": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time"
+     }
+    },
+    "description": "Allow-only firewall rules, applied to the servers it's attached to (no restart)"
+   },
+   "RuleRequest": {
+    "type": "object",
+    "properties": {
+     "direction": {
+      "type": "string",
+      "enum": [
+       "ingress",
+       "egress"
+      ]
+     },
+     "protocol": {
+      "type": "string",
+      "enum": [
+       "all",
+       "tcp",
+       "udp",
+       "icmp"
+      ]
+     },
+     "from_port": {
+      "type": "integer"
+     },
+     "to_port": {
+      "type": "integer"
+     },
+     "cidr": {
+      "type": "string",
+      "description": "e.g. 0.0.0.0/0 (or peer_group_id)"
+     },
+     "peer_group_id": {
+      "type": "string",
+      "description": "A group of the same project (or cidr)",
+      "format": "uuid"
+     },
+     "description": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "direction",
+     "protocol"
+    ]
+   },
+   "Backup": {
+    "type": "object",
+    "properties": {
+     "volid": {
+      "type": "string",
+      "description": "The backup's id on its storage"
+     },
+     "storage": {
+      "type": "string"
+     },
+     "format": {
+      "type": "string"
+     },
+     "size": {
+      "type": "integer",
+      "description": "Bytes"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "notes": {
+      "type": "string"
+     },
+     "protected": {
+      "type": "boolean"
+     },
+     "server": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string",
+        "format": "uuid"
+       },
+       "name": {
+        "type": "string"
+       },
+       "status": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    "description": "Other fields may be present"
+   },
+   "Message": {
+    "type": "object",
+    "properties": {
+     "message": {
+      "type": "string"
+     }
+    }
    },
    "InboxItem": {
     "type": "object",

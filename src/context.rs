@@ -36,7 +36,10 @@ impl Context {
             Some(key) => Ok(Client::new(&self.api_url, key)),
             None => Err(CliError::new(
                 ErrorKind::Auth,
-                "not signed in: run `stargazer login` or set STARGAZER_API_KEY (create a key in the console: Inventory > Additional Services > CLI)",
+                format!(
+                    "not signed in: run `stargazer login` or set STARGAZER_API_KEY (create a key in the console: {})",
+                    crate::cli::KEY_PAGE
+                ),
             )),
         }
     }

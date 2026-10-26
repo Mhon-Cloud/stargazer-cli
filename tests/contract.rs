@@ -35,9 +35,21 @@ fn contract_ops() -> Vec<Value> {
     load("openapi/contract.json")["operations"].as_array().expect("operations").clone()
 }
 
-/// (METHOD, path) of every API call in src/: a `"/api/v1...` literal after `.get(`, `.get_query(`, `.post(`,
-/// `.put(` or `.delete(` on the same line.
+/// (METHOD, path) of every API call in src/: a `"/api/v1...` literal that is the first argument
+/// of `.get(` / `.get_query(` / `.post(` / `.put(` / `.put_bytes(` / `.delete(` / `.delete_with(`
+/// (possibly through `&format!(` and on the next line), or a `Kind`'s `path:` (listed with GET).
+/// Anything else (doc comments, messages) isn't a call.
 fn calls_in_code() -> BTreeSet<(String, String)> {
+    const CALLS: &[(&str, &str)] = &[
+        (".get_query(", "GET"),
+        (".get(", "GET"),
+        (".post(", "POST"),
+        (".put_bytes(", "PUT"),
+        (".put(", "PUT"),
+        (".delete_with(", "DELETE"),
+        (".delete(", "DELETE"),
+        ("path:", "GET"),
+    ];
     let mut calls = BTreeSet::new();
     let mut dirs = vec![Path::new(env!("CARGO_MANIFEST_DIR")).join("src")];
     while let Some(dir) = dirs.pop() {
@@ -50,22 +62,16 @@ fn calls_in_code() -> BTreeSet<(String, String)> {
             if path.extension().is_none_or(|e| e != "rs") {
                 continue;
             }
-            for line in fs::read_to_string(&path).expect("source").lines() {
-                let Some(start) = line.find("\"/api/v1") else { continue };
-                let before = &line[..start];
-                let method = [
-                    (".get_query(", "GET"),
-                    (".get(", "GET"),
-                    (".post(", "POST"),
-                    (".put(", "PUT"),
-                    (".delete(", "DELETE"),
-                ]
-                .iter()
-                .filter_map(|(call, m)| before.rfind(call).map(|at| (at, *m)))
-                .max_by_key(|(at, _)| *at)
-                .map(|(_, m)| m);
-                let Some(method) = method else { continue }; // a doc comment or a message, not a call
-                let literal = &line[start + 1..];
+            let text = fs::read_to_string(&path).expect("source");
+            let mut from = 0;
+            while let Some(found) = text[from..].find("\"/api/v1") {
+                let start = from + found;
+                from = start + 1;
+                let before = text[..start].trim_end();
+                let before = before.strip_suffix("&format!(").or(before.strip_suffix("format!(")).unwrap_or(before);
+                let before = before.strip_suffix('&').unwrap_or(before).trim_end();
+                let Some((_, method)) = CALLS.iter().find(|(call, _)| before.ends_with(call)) else { continue };
+                let literal = &text[start + 1..];
                 let end = literal.find('"').expect("closing quote");
                 calls.insert((method.to_string(), normalize(&literal[..end])));
             }

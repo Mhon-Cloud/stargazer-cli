@@ -4,76 +4,899 @@
     {
       "method": "GET",
       "path": "/api/v1/me/credit",
-      "used_by": ["login", "credit"],
-      "response": ["credit", "currency"]
+      "used_by": [
+        "login",
+        "credit"
+      ],
+      "response": [
+        "credit",
+        "currency"
+      ]
     },
     {
       "method": "GET",
       "path": "/api/v1/auth/me",
-      "used_by": ["whoami"],
-      "response": ["user.email"]
+      "used_by": [
+        "whoami",
+        "servers create / containers create (login name)"
+      ],
+      "response": [
+        "user.email",
+        "user.username"
+      ]
     },
     {
       "method": "GET",
       "path": "/api/v1/projects",
-      "used_by": ["projects list"],
-      "response": ["projects[].id", "projects[].name", "projects[].my_role"]
+      "used_by": [
+        "projects list|show|rename|delete",
+        "every --project lookup"
+      ],
+      "response": [
+        "projects[].id",
+        "projects[].name",
+        "projects[].my_role",
+        "projects[].is_default",
+        "projects[].kind"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/projects",
+      "used_by": [
+        "projects create"
+      ],
+      "request": [
+        "name",
+        "description",
+        "kind",
+        "company_id"
+      ],
+      "response": [
+        "project"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/projects/{id}",
+      "used_by": [
+        "projects rename"
+      ],
+      "request": [
+        "name",
+        "description"
+      ],
+      "response": [
+        "project"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/projects/{id}",
+      "used_by": [
+        "projects delete"
+      ],
+      "request": [
+        "confirm_name"
+      ],
+      "response": [
+        "project"
+      ]
     },
     {
       "method": "GET",
       "path": "/api/v1/availability-zones",
-      "used_by": ["zones list"],
-      "response": ["availability_zones[].id", "availability_zones[].name"]
+      "used_by": [
+        "zones list",
+        "every --zone lookup"
+      ],
+      "response": [
+        "availability_zones[].id",
+        "availability_zones[].name"
+      ]
     },
     {
       "method": "GET",
       "path": "/api/v1/servers",
-      "used_by": ["servers list", "servers start|stop|rename|resize|delete (name lookup)"],
-      "response": ["servers[].id", "servers[].name", "servers[].status", "servers[].project.id", "servers[].project.name"]
+      "used_by": [
+        "servers list|show",
+        "every server lookup",
+        "--wait on server actions"
+      ],
+      "response": [
+        "servers[].id",
+        "servers[].name",
+        "servers[].status",
+        "servers[].project.id",
+        "servers[].project.name",
+        "servers[].last_action",
+        "servers[].order"
+      ]
     },
     {
       "method": "POST",
       "path": "/api/v1/servers/{id}/actions",
-      "used_by": ["servers start|stop|rename|resize|delete"],
-      "request": ["action", "name", "cores", "memory_mb", "disk_gb"],
-      "response": ["server"]
+      "used_by": [
+        "servers start|stop|rename|resize|delete"
+      ],
+      "request": [
+        "action",
+        "name",
+        "cores",
+        "memory_mb",
+        "disk_gb"
+      ],
+      "response": [
+        "server"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/servers/{id}/renew",
+      "used_by": [
+        "servers renew"
+      ],
+      "response": [
+        "server"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/servers/{id}/auto-renew",
+      "used_by": [
+        "servers auto-renew"
+      ],
+      "request": [
+        "auto_renew"
+      ],
+      "response": [
+        "server"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/market/compute/options",
+      "used_by": [
+        "servers options|create",
+        "containers options|create"
+      ],
+      "response": [
+        "os",
+        "packages",
+        "limits",
+        "credit",
+        "container_rates",
+        "container_packages"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/market/compute/quote",
+      "used_by": [
+        "servers create"
+      ],
+      "request": [
+        "project_id",
+        "name",
+        "cpu_cores",
+        "ram_gb",
+        "disks",
+        "os",
+        "availability_zone_id",
+        "public_ip",
+        "dns_label",
+        "period_months",
+        "username",
+        "password",
+        "credential_ids",
+        "coupon_code",
+        "auto_backup",
+        "backup_day",
+        "backup_time"
+      ],
+      "response": [
+        "total",
+        "monthly",
+        "credit",
+        "enough_credit",
+        "coupon_error"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/market/compute/orders",
+      "used_by": [
+        "servers orders list|cancel",
+        "servers create --wait"
+      ],
+      "response": [
+        "orders[].id",
+        "orders[].number",
+        "orders[].name",
+        "orders[].status",
+        "orders[].provision_note"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/market/compute/orders",
+      "used_by": [
+        "servers create"
+      ],
+      "request": [
+        "project_id",
+        "name",
+        "cpu_cores",
+        "ram_gb",
+        "disks",
+        "os",
+        "availability_zone_id",
+        "public_ip",
+        "dns_label",
+        "period_months",
+        "username",
+        "password",
+        "credential_ids",
+        "coupon_code",
+        "auto_backup",
+        "backup_day",
+        "backup_time"
+      ],
+      "response": [
+        "order"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/market/compute/orders/{id}/cancel",
+      "used_by": [
+        "servers orders cancel"
+      ],
+      "response": [
+        "order"
+      ]
     },
     {
       "method": "GET",
       "path": "/api/v1/containers",
-      "used_by": ["containers list", "containers start|stop|delete|logs (name lookup)"],
-      "response": ["containers[].id", "containers[].name", "containers[].number", "containers[].status", "containers[].project.id", "containers[].project.name"]
+      "used_by": [
+        "containers list|show",
+        "every container lookup",
+        "--wait on containers"
+      ],
+      "response": [
+        "containers[].id",
+        "containers[].name",
+        "containers[].number",
+        "containers[].status",
+        "containers[].status_note",
+        "containers[].ports",
+        "containers[].project.id",
+        "containers[].project.name"
+      ]
     },
     {
       "method": "POST",
       "path": "/api/v1/containers/{id}/start",
-      "used_by": ["containers start"],
-      "response": ["container"]
+      "used_by": [
+        "containers start"
+      ],
+      "response": [
+        "container"
+      ]
     },
     {
       "method": "POST",
       "path": "/api/v1/containers/{id}/stop",
-      "used_by": ["containers stop"],
-      "response": ["container"]
+      "used_by": [
+        "containers stop"
+      ],
+      "response": [
+        "container"
+      ]
     },
     {
       "method": "DELETE",
       "path": "/api/v1/containers/{id}",
-      "used_by": ["containers delete"],
-      "response": ["container"]
+      "used_by": [
+        "containers delete"
+      ],
+      "response": [
+        "container"
+      ]
     },
     {
       "method": "GET",
       "path": "/api/v1/containers/{id}/logs",
-      "used_by": ["containers logs"],
-      "query": ["tail"],
-      "response": ["logs"]
+      "used_by": [
+        "containers logs"
+      ],
+      "query": [
+        "tail"
+      ],
+      "response": [
+        "logs"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/market/containers/options",
+      "used_by": [
+        "containers options|create"
+      ],
+      "response": [
+        "free_available",
+        "free",
+        "zone_ids"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/market/containers",
+      "used_by": [
+        "containers create"
+      ],
+      "request": [
+        "project_id",
+        "name",
+        "image",
+        "command",
+        "cpu_cores",
+        "ram_gb",
+        "storage_gb",
+        "ports",
+        "env",
+        "availability_zone_id",
+        "period_months",
+        "dns_name",
+        "dns_kind",
+        "dns_port",
+        "dns_protocol",
+        "dns_srv",
+        "login_username",
+        "login_password",
+        "startup_script",
+        "files"
+      ],
+      "response": [
+        "container"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/market/containers/uploads",
+      "used_by": [
+        "containers create --upload"
+      ],
+      "request": [
+        "size_bytes"
+      ],
+      "response": [
+        "id",
+        "chunk_bytes"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/market/containers/uploads/{id}",
+      "used_by": [
+        "containers create --upload"
+      ],
+      "query": [
+        "offset"
+      ],
+      "response": [
+        "received_bytes"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/market/containers/uploads/{id}/complete",
+      "used_by": [
+        "containers create --upload"
+      ],
+      "response": [
+        "id"
+      ]
     },
     {
       "method": "GET",
       "path": "/api/v1/dns",
-      "used_by": ["dns list"],
-      "response": ["records[].id", "records[].name"]
+      "used_by": [
+        "dns list|update|delete"
+      ],
+      "response": [
+        "records[].id",
+        "records[].name",
+        "records[].fqdn",
+        "records[].project.id"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dns/check",
+      "used_by": [
+        "dns check"
+      ],
+      "query": [
+        "name"
+      ],
+      "response": [
+        "available",
+        "reason"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/dns",
+      "used_by": [
+        "dns create"
+      ],
+      "request": [
+        "project_id",
+        "name",
+        "target_kind",
+        "container_id",
+        "port",
+        "kind",
+        "protocol",
+        "srv"
+      ],
+      "response": [
+        "record"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/dns/{id}",
+      "used_by": [
+        "dns update"
+      ],
+      "request": [
+        "project_id",
+        "name",
+        "target_kind",
+        "container_id",
+        "port",
+        "kind",
+        "protocol",
+        "srv"
+      ],
+      "response": [
+        "record"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/dns/{id}",
+      "used_by": [
+        "dns delete"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/public-ips",
+      "used_by": [
+        "public-ips list|bind|unbind|release"
+      ],
+      "response": [
+        "public_ips[].id",
+        "public_ips[].address",
+        "public_ips[].project.id"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/market/public-ip/quote",
+      "used_by": [
+        "public-ips quote|reserve"
+      ],
+      "response": [
+        "total",
+        "enough_credit",
+        "zones"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/market/public-ip",
+      "used_by": [
+        "public-ips reserve"
+      ],
+      "request": [
+        "project_id",
+        "availability_zone_id"
+      ],
+      "response": [
+        "address",
+        "reserved_until"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/public-ips/{id}/bind",
+      "used_by": [
+        "public-ips bind"
+      ],
+      "request": [
+        "server_id"
+      ],
+      "response": [
+        "public_ip"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/public-ips/{id}/bind",
+      "used_by": [
+        "public-ips unbind"
+      ],
+      "response": [
+        "public_ip"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/public-ips/{id}",
+      "used_by": [
+        "public-ips release"
+      ],
+      "response": [
+        "message"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/credentials",
+      "used_by": [
+        "ssh-keys list",
+        "servers create --ssh-key",
+        "every SSH key lookup"
+      ],
+      "response": [
+        "credentials[].id",
+        "credentials[].name",
+        "credentials[].fingerprint",
+        "credentials[].project.id"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/credentials",
+      "used_by": [
+        "ssh-keys add"
+      ],
+      "request": [
+        "project_id",
+        "name",
+        "public_key"
+      ],
+      "response": [
+        "credential"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/credentials/{id}",
+      "used_by": [
+        "ssh-keys rename"
+      ],
+      "request": [
+        "name"
+      ],
+      "response": [
+        "credential"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/credentials/{id}",
+      "used_by": [
+        "ssh-keys delete"
+      ],
+      "response": [
+        "message"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/credentials/{id}/bindings",
+      "used_by": [
+        "ssh-keys install"
+      ],
+      "request": [
+        "server_id"
+      ],
+      "response": [
+        "credential"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/credentials/{id}/bindings/{serverId}",
+      "used_by": [
+        "ssh-keys uninstall"
+      ],
+      "response": [
+        "credential"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/security-groups",
+      "used_by": [
+        "security-groups list|show",
+        "every group lookup"
+      ],
+      "response": [
+        "security_groups[].id",
+        "security_groups[].name",
+        "security_groups[].rules",
+        "security_groups[].project.id"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/security-groups",
+      "used_by": [
+        "security-groups create"
+      ],
+      "request": [
+        "project_id",
+        "name",
+        "description"
+      ],
+      "response": [
+        "security_group"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/security-groups/{id}",
+      "used_by": [
+        "security-groups rename"
+      ],
+      "request": [
+        "name",
+        "description"
+      ],
+      "response": [
+        "security_group"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/security-groups/{id}",
+      "used_by": [
+        "security-groups delete"
+      ],
+      "response": [
+        "message"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/security-groups/{id}/rules",
+      "used_by": [
+        "security-groups allow"
+      ],
+      "request": [
+        "direction",
+        "protocol",
+        "from_port",
+        "to_port",
+        "cidr",
+        "peer_group_id",
+        "description"
+      ],
+      "response": [
+        "security_group"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/security-groups/{id}/rules/{ruleId}",
+      "used_by": [
+        "security-groups revoke"
+      ],
+      "response": [
+        "security_group"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/security-groups/{id}/attachments",
+      "used_by": [
+        "security-groups attach"
+      ],
+      "request": [
+        "server_id"
+      ],
+      "response": [
+        "security_group"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/security-groups/{id}/attachments/{serverId}",
+      "used_by": [
+        "security-groups detach"
+      ],
+      "response": [
+        "security_group"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/backups",
+      "used_by": [
+        "backups list|create"
+      ],
+      "response": [
+        "backups",
+        "storages"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/servers/{id}/backups",
+      "used_by": [
+        "backups create"
+      ],
+      "request": [
+        "storage",
+        "notes"
+      ],
+      "response": [
+        "message"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/servers/{id}/backups/restore",
+      "used_by": [
+        "backups restore"
+      ],
+      "request": [
+        "volid"
+      ],
+      "response": [
+        "message"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/servers/{id}/backups/delete",
+      "used_by": [
+        "backups delete"
+      ],
+      "request": [
+        "volid"
+      ],
+      "response": [
+        "message"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/billings",
+      "used_by": [
+        "bills list"
+      ],
+      "query": [
+        "from",
+        "to"
+      ],
+      "response": [
+        "billings"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/billings/{id}",
+      "used_by": [
+        "bills show"
+      ],
+      "response": [
+        "billing",
+        "items"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/billings/summary",
+      "used_by": [
+        "bills summary"
+      ],
+      "query": [
+        "range"
+      ],
+      "response": [
+        "bills",
+        "total",
+        "from",
+        "to"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/billings/invoices",
+      "used_by": [
+        "bills invoices"
+      ],
+      "response": [
+        "invoices"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/billings/invoices/{id}",
+      "used_by": [
+        "bills invoice"
+      ],
+      "response": [
+        "invoice"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/announcements",
+      "used_by": [
+        "inbox list|read"
+      ],
+      "response": [
+        "announcements[].id",
+        "announcements[].title",
+        "announcements[].description",
+        "announcements[].read"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/announcements/{id}/read",
+      "used_by": [
+        "inbox read"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/announcements/{id}",
+      "used_by": [
+        "inbox dismiss"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/usage",
+      "used_by": [
+        "usage"
+      ],
+      "query": [
+        "scope",
+        "range",
+        "server",
+        "container"
+      ],
+      "response": [
+        "summary"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/quotas",
+      "used_by": [
+        "quotas"
+      ],
+      "response": [
+        "quotas"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/public/pricing",
+      "used_by": [
+        "pricing"
+      ]
     }
   ]
 }

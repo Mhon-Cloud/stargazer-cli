@@ -21,6 +21,7 @@ pub fn run() -> i32 {
     // clap prints --help / --version / usage errors itself (usage errors exit with 2).
     let cli = Cli::parse();
     let format = Format::resolve(cli.global.output);
+    output::set_fields(cli.global.fields.clone());
     let result = match commands::run_offline(&cli.command, format) {
         Some(result) => result,
         None => Context::from_args(&cli.global, format).and_then(|ctx| commands::dispatch(&cli.command, &ctx)),

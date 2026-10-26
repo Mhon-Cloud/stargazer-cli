@@ -28,7 +28,7 @@ if [ "${1:-}" = "--uninstall" ]; then
     [ -n "${STARGAZER_CONFIG_DIR:-}" ] && config="$STARGAZER_CONFIG_DIR"
     if [ -e "$bin" ]; then rm -f "$bin" && echo "Removed $bin"; else echo "No stargazer binary at $bin"; fi
     if [ -e "$config" ]; then rm -rf "$config" && echo "Removed $config (your saved API key)"; fi
-    echo "Done. Keys stay valid until you revoke them in the console (Inventory > Additional Services > CLI)."
+    echo "Done. Keys stay valid until you revoke them in the console (Inventory > Interfaces > CLI)."
     exit 0
 fi
 
@@ -89,4 +89,4 @@ case ":$PATH:" in
     *":$INSTALL_DIR:"*) ;;
     *) echo "Add it to your PATH: export PATH=\"$INSTALL_DIR:\$PATH\"" ;;
 esac
-echo "Next: stargazer login   (create a key in the console: Inventory > Additional Services > CLI)"
+echo "Next: stargazer login   (create a key in the console: Inventory > Interfaces > CLI)"

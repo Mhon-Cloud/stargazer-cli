@@ -14,13 +14,17 @@ Many users drive it **through AI agents**, so its output and errors are a contra
    array of the API's own objects, passed through untouched. Errors go to **stderr** as
    `{"error": {"code", "message", "status"}}`.
 3. **Exit codes are stable** (`src/error.rs`): 0 ok, 1 internal, 2 usage, 3 auth, 4 not found, 5 not enough credit,
-   6 conflict, 7 rate limited, 8 network. Never reuse or renumber one; add new ones at the end.
-4. **Never prompt** except `login` on a terminal. Destructive commands need `--yes` and fail with a usage error (exit 2)
-   without it. An agent must never hang waiting for input.
+   6 conflict, 7 rate limited, 8 network, 9 timeout (`--wait`). Never reuse or renumber one; add new ones at the end.
+4. **Never prompt** except `login` on a terminal. **Spending credit or destroying something needs `--yes`**
+   (`common::need_yes`): without it nothing is sent, and the usage error (exit 2) says what would happen, price
+   included. An agent must never hang waiting for input; `--wait` always has a `--timeout`.
 5. **Keys stay secret.** No `--api-key` flag (shell history). The key comes from `STARGAZER_API_KEY` or the config file
    (written 0600). Never print it, log it, or put it in an error message.
-6. **Names work where ids do.** Actions take an id or a name (servers: name; containers: name or number), resolved with
-   `commands::common::find`; ambiguous names are a usage error that asks for the id or `--project`.
+6. **Names work where ids do.** Everything that names a thing takes its id or a name, resolved by a `Kind` in
+   `commands/common.rs` (`SERVERS.resolve(...)`); ambiguous names are a usage error asking for the id or `--project`.
+   Orders default to the personal Default project and the only location (`order_project`, `order_zone`).
+8. **Secrets in, once out.** Passwords come from stdin (`--password-stdin`), never a flag; one the CLI generates is
+   printed once in the order's result (the platform also puts it in the inbox).
 7. **Help text is short and plain.** `--help` is how agents learn the CLI: one line per command saying what it does.
 
 ## Layout
@@ -44,22 +48,32 @@ Many users drive it **through AI agents**, so its output and errors are a contra
 ├── src/
 │   ├── main.rs               calls stargazer::run()
 │   ├── lib.rs                run(): parse, build the Context, dispatch, print errors, exit code
-│   ├── cli.rs                every command / flag / help text (clap derive)
+│   ├── cli/                  every command / flag / help text (clap derive), one file per group:
+│   │   ├── mod.rs            Cli, Command, shared args (ProjectFilter, Confirm = --yes, Wait = --wait)
+│   │   ├── account.rs  projects.rs  servers.rs  containers.rs
+│   │   ├── network.rs        DNS, public IPs (VPCs go here)
+│   │   └── security.rs       SSH keys, security groups, backups
 │   ├── context.rs            output format + API URL + key, resolved once
 │   ├── config.rs             ~/.config/stargazer/config.toml (0600)
 │   ├── api.rs                HTTP client (ureq); answers stay serde_json::Value
 │   ├── error.rs              CliError, ErrorKind, exit codes
-│   ├── output.rs             tables, JSON, errors
+│   ├── output.rs             tables, JSON, errors, --fields
 │   └── commands/             one file per command group
 │       ├── mod.rs            dispatch
-│       ├── common.rs         list extraction, find by id / name, project filter
+│       ├── common.rs         Kind (list + resolve by id / name per resource), defaults, --wait, --yes, passwords
 │       ├── account.rs        login, logout, whoami, credit
-│       ├── projects.rs  zones.rs  servers.rs  containers.rs  dns.rs
+│       ├── billing.rs        bills, inbox, usage, quotas, pricing
+│       ├── projects.rs  zones.rs
+│       ├── servers.rs        server actions; compute_order.rs = ordering (options, quote, orders)
+│       ├── containers.rs     container actions; container_order.rs = ordering; catalog.rs = images by name;
+│       │                     upload.rs = folder uploads (tar + chunks)
+│       ├── dns.rs  public_ips.rs  ssh_keys.rs  security_groups.rs  backups.rs
 │       └── version.rs        version, completions (no API, no config)
 ├── tests/
 │   ├── common/mod.rs         runs the real binary in a clean env (temp config, no key)
 │   ├── cli.rs                offline behaviour
 │   ├── api.rs                against a mock API (mockito)
+│   ├── market.rs             ordering: --yes, request bodies, uploads, DNS defaults, --fields, --wait
 │   └── contract.rs           contract.json = the code's calls, and the spec has them
 └── .github/
     ├── dependabot.yml        weekly dependency / action update PRs
@@ -95,14 +109,24 @@ A PR is mergeable when CI is green. Never tag a commit whose CI failed. How to c
 
 1. Find the operation in `openapi/openapi.json` (if it isn't there, the platform must add it first: it lives in
    `management_page/backend/api_gateway/apidocs/gen_openapi.py` in the platform repo, then refresh the copy here).
-2. Add the subcommand and its flags in `src/cli.rs` (doc comments = help text; `visible_alias = "ls"` on lists).
-3. Implement it in the matching `src/commands/<group>.rs` (new group = new file + a line in `commands/mod.rs`):
-   call `ctx.client()?`, print with `output::print_list` / `print_object` / `print_message`. Pick table columns with
-   `col("HEADER", "dot.path")`; JSON output stays the API's object.
-4. Test it in `tests/api.rs` with a mockito mock: the request (method, path, body), the JSON output, and at least one
-   error status mapping to the right exit code. Never call the real API from tests.
+2. Add the subcommand and its flags in the group's `src/cli/<group>.rs` (doc comments = help text;
+   `visible_alias = "ls"` on lists; `Confirm` for --yes, `Wait` for --wait).
+3. Implement it in the matching `src/commands/<group>.rs`: call `ctx.client()?`, resolve names with a `Kind`, print
+   with `output::print_list` / `print_object` / `print_message`. Pick table columns with `col("HEADER", "dot.path")`;
+   JSON output stays the API's object. Write the API path as a literal in the call (`client.post(&format!("/api/v1/x/{id}"), ...)`):
+   `tests/contract.rs` finds calls that way.
+4. Test it in `tests/api.rs` / `tests/market.rs` with a mockito mock: the request (method, path, body), the JSON
+   output, and at least one error status mapping to the right exit code. Never call the real API from tests.
 5. Add the operation (and the fields you rely on) to `openapi/contract.json`: `tests/contract.rs` fails until you do.
 6. Document it in `docs/commands.md` (and the README's table when it's a headline command).
+
+### A new resource group (e.g. VPCs)
+
+1. The platform adds the operations to its public spec (`gen_openapi.py`), deploys, and the copy here is refreshed.
+2. `src/cli/network.rs` (or a new file listed in `cli/mod.rs`): a `VpcsCmd` enum + a `Command::Vpcs` variant.
+3. `src/commands/vpcs.rs` + a line in `commands/mod.rs`'s `dispatch`; a `pub const VPCS: Kind` in `common.rs` so
+   `--vpc NAME` works everywhere.
+4. Contract, tests, docs as above. The planned VPC commands are in docs/roadmap.md.
 
 ## Build, lint, test
 

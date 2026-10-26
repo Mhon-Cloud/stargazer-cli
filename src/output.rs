@@ -5,8 +5,12 @@
 //!
 //! Errors go to stderr: `error: <message>` in table mode, `{"error": {...}}` in JSON mode.
 //! Nothing else is ever printed in JSON mode (no colours, spinners or prompts).
+//!
+//! `--fields a,b.c` (set once by `lib::run`) trims JSON output to those paths (fewer tokens for
+//! agents) and, in table mode, picks the columns.
 
 use std::io::{IsTerminal, Write};
+use std::sync::OnceLock;
 
 use serde_json::{json, Value};
 
@@ -49,6 +53,57 @@ pub const fn col(header: &'static str, path: &'static str) -> Column {
 
 static NULL: Value = Value::Null;
 
+static FIELDS: OnceLock<Vec<String>> = OnceLock::new();
+
+/// `--fields`: empty = everything.
+pub fn set_fields(fields: Vec<String>) {
+    let fields: Vec<String> = fields.into_iter().map(|f| f.trim().to_string()).filter(|f| !f.is_empty()).collect();
+    let _ = FIELDS.set(fields);
+}
+
+fn fields() -> &'static [String] {
+    FIELDS.get().map(Vec::as_slice).unwrap_or(&[])
+}
+
+/// Only `paths` of an object (nested paths keep their nesting); arrays are trimmed item by item.
+pub fn pick(value: &Value, paths: &[String]) -> Value {
+    match value {
+        Value::Array(items) => Value::Array(items.iter().map(|v| pick(v, paths)).collect()),
+        Value::Object(_) => {
+            let mut out = Value::Object(Default::default());
+            for path in paths {
+                let mut at = &mut out;
+                let keys: Vec<&str> = path.split('.').collect();
+                for (i, key) in keys.iter().enumerate() {
+                    if i + 1 == keys.len() {
+                        at[*key] = lookup(value, path).clone();
+                    } else {
+                        if !at[*key].is_object() {
+                            at[*key] = Value::Object(Default::default());
+                        }
+                        at = &mut at[*key];
+                    }
+                }
+            }
+            out
+        }
+        other => other.clone(),
+    }
+}
+
+/// The columns to show: `--fields` when given, else the command's own.
+fn columns_for(columns: &[Column]) -> Vec<Column> {
+    if fields().is_empty() {
+        columns.iter().map(|c| col(c.header, c.path)).collect()
+    } else {
+        // Leaked: a handful of short strings, once per process.
+        fields()
+            .iter()
+            .map(|f| col(Box::leak(f.to_uppercase().into_boxed_str()), Box::leak(f.clone().into_boxed_str())))
+            .collect()
+    }
+}
+
 /// The value at a dot path (`zone.name`), or null.
 pub fn lookup<'a>(value: &'a Value, path: &str) -> &'a Value {
     path.split('.').fold(value, |v, key| v.get(key).unwrap_or(&NULL))
@@ -85,7 +140,11 @@ fn json_text(value: &Value) -> String {
 }
 
 pub fn print_json(value: &Value) {
-    out(&json_text(value));
+    if fields().is_empty() {
+        out(&json_text(value));
+    } else {
+        out(&json_text(&pick(value, fields())));
+    }
 }
 
 /// A list: a table with `columns`, or the items as a JSON array. `empty` is shown (table only)
@@ -99,9 +158,10 @@ pub fn print_list(format: Format, items: &[Value], columns: &[Column], empty: &s
         out(empty);
         return;
     }
+    let columns = columns_for(columns);
     let rows: Vec<Vec<String>> =
         items.iter().map(|item| columns.iter().map(|c| cell(lookup(item, c.path))).collect()).collect();
-    out(&render_table(columns, &rows));
+    out(&render_table(&columns, &rows));
 }
 
 /// One object: `Field  value` lines, or the object as JSON.
@@ -110,6 +170,7 @@ pub fn print_object(format: Format, value: &Value, fields: &[Column]) {
         print_json(value);
         return;
     }
+    let fields = columns_for(fields);
     let width = fields.iter().map(|f| f.header.chars().count()).max().unwrap_or(0);
     let lines: Vec<String> =
         fields.iter().map(|f| format!("{:width$}  {}", f.header, cell(lookup(value, f.path)))).collect();
@@ -174,6 +235,13 @@ mod tests {
         assert_eq!(cell(&json!(true)), "yes");
         assert_eq!(cell(&json!(["a", "b"])), "a, b");
         assert_eq!(cell(&json!({ "name": "bkk-1" })), "bkk-1");
+    }
+
+    #[test]
+    fn pick_keeps_only_the_paths() {
+        let v = json!([{ "id": "1", "name": "web", "project": { "id": "p", "name": "Shop" }, "x": 1 }]);
+        let paths = vec!["id".to_string(), "project.name".to_string(), "missing".to_string()];
+        assert_eq!(pick(&v, &paths), json!([{ "id": "1", "project": { "name": "Shop" }, "missing": null }]));
     }
 
     #[test]

@@ -18,7 +18,7 @@ if ($Uninstall) {
     if ($kept -ne $userPath) { [Environment]::SetEnvironmentVariable("Path", $kept, "User"); Write-Host "Removed it from your PATH" }
     $config = if ($env:STARGAZER_CONFIG_DIR) { $env:STARGAZER_CONFIG_DIR } else { Join-Path $env:APPDATA "stargazer" }
     if (Test-Path $config) { Remove-Item -Recurse -Force $config; Write-Host "Removed $config (your saved API key)" }
-    Write-Host "Done. Keys stay valid until you revoke them in the console (Inventory > Additional Services > CLI)."
+    Write-Host "Done. Keys stay valid until you revoke them in the console (Inventory > Interfaces > CLI)."
     return
 }
 
@@ -45,7 +45,7 @@ try {
         Write-Host "Added $installDir to your PATH (open a new terminal to use it)."
     }
     & (Join-Path $installDir "stargazer.exe") version --output table
-    Write-Host "Next: stargazer login   (create a key in the console: Inventory > Additional Services > CLI)"
+    Write-Host "Next: stargazer login   (create a key in the console: Inventory > Interfaces > CLI)"
 }
 finally {
     Remove-Item -Recurse -Force $tmp
