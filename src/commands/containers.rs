@@ -48,6 +48,10 @@ pub const DETAIL: &[Column] = &[
 ];
 
 pub fn run(cmd: &ContainersCmd, ctx: &Context) -> Result<(), CliError> {
+    // The catalog is built in: no key needed.
+    if let ContainersCmd::Images = cmd {
+        return container_order::images(ctx);
+    }
     let client = ctx.client()?;
     match cmd {
         ContainersCmd::List(filter) => {
@@ -61,7 +65,7 @@ pub fn run(cmd: &ContainersCmd, ctx: &Context) -> Result<(), CliError> {
             Ok(())
         }
         ContainersCmd::Create(args) => container_order::create(args, ctx, &client),
-        ContainersCmd::Images => container_order::images(ctx),
+        ContainersCmd::Images => unreachable!("handled above"),
         ContainersCmd::Options => container_order::options(ctx, &client),
         ContainersCmd::Start { target, wait } => {
             let id = id(&client, target)?;

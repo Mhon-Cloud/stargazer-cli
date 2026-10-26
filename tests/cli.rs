@@ -54,3 +54,10 @@ fn delete_needs_yes() {
 fn login_refuses_what_isnt_a_key() {
     Env::new().cmd().args(["login", "--api-key-stdin"]).write_stdin("not-a-key\n").assert().code(2);
 }
+
+#[test]
+fn the_image_catalog_needs_no_key() {
+    let out = Env::new().cmd().args(["containers", "images"]).assert().success().get_output().stdout.clone();
+    let images: Value = serde_json::from_slice(&out).expect("json");
+    assert!(images.as_array().is_some_and(|l| l.iter().any(|i| i["alias"] == "ubuntu")));
+}
