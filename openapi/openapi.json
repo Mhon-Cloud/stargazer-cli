@@ -1,3208 +1,3216 @@
 {
- "openapi": "3.0.3",
- "info": {
-  "title": "Mhon Cloud API",
-  "version": "1.0.0",
-  "description": "Manage your Mhon Cloud servers, containers, DNS names and billing from code.\n\n**Authentication:** create an API key in the console (Overview → API) and send it as `Authorization: Bearer mhc_...`. A key acts as you, on the operations listed here only.\n\n**Credit:** read it with `GET /api/v1/me/credit`. Top-ups and withdrawals are made on the website (Overview → Billing), not through the API.\n\nAmounts are in Thai baht. Times are RFC 3339."
- },
- "servers": [
-  {
-   "url": "https://app.mhon.cloud",
-   "description": "Mhon Cloud"
-  }
- ],
- "security": [
-  {
-   "apiKey": []
-  }
- ],
- "tags": [
-  {
-   "name": "Account"
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Mhon Cloud API",
+    "version": "1.0.0",
+    "description": "Manage your Mhon Cloud servers, containers, DNS names and billing from code.\n\n**Authentication:** create an API key in the console (Inventory → Interfaces → API) and send it as `Authorization: Bearer mhc_...`. A key acts as you, on the operations listed here only.\n\n**Credit:** read it with `GET /api/v1/me/credit`. Top-ups and withdrawals are made on the website (Overview → Billing), not through the API.\n\nAmounts are in Thai baht. Times are RFC 3339."
   },
-  {
-   "name": "Billing"
-  },
-  {
-   "name": "Projects"
-  },
-  {
-   "name": "Locations"
-  },
-  {
-   "name": "Servers"
-  },
-  {
-   "name": "Containers"
-  },
-  {
-   "name": "Usage"
-  },
-  {
-   "name": "Market"
-  },
-  {
-   "name": "DNS"
-  },
-  {
-   "name": "Network"
-  },
-  {
-   "name": "Inbox"
-  },
-  {
-   "name": "Pricing"
-  }
- ],
- "paths": {
-  "/api/v1/me/credit": {
-   "get": {
-    "tags": [
-     "Account"
-    ],
-    "summary": "Your credit",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/Credit"
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     }
-    },
-    "description": "How much credit you have left. Top up on the website (Overview → Billing)."
-   }
-  },
-  "/api/v1/auth/me": {
-   "get": {
-    "tags": [
-     "Account"
-    ],
-    "summary": "Your account",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/Me"
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     }
+  "servers": [
+    {
+      "url": "https://app.mhon.cloud",
+      "description": "Mhon Cloud"
     }
-   }
-  },
-  "/api/v1/billings": {
-   "get": {
-    "tags": [
-     "Billing"
-    ],
-    "summary": "Your bills",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "billings": {
-           "type": "array",
-           "items": {
-            "$ref": "#/components/schemas/Bill"
-           }
-          },
-          "total_spent": {
-           "type": "number",
-           "description": "Within from / to, refunds subtracted"
-          },
-          "spending": {
-           "type": "array",
-           "items": {
-            "type": "object"
-           }
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "400": {
-      "$ref": "#/components/responses/E400"
-     }
+  ],
+  "security": [
+    {
+      "apiKey": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Account"
     },
-    "parameters": [
-     {
-      "name": "from",
-      "in": "query",
-      "required": false,
-      "schema": {
-       "type": "string",
-       "format": "date-time"
-      },
-      "description": "Period start (with to)"
-     },
-     {
-      "name": "to",
-      "in": "query",
-      "required": false,
-      "schema": {
-       "type": "string",
-       "format": "date-time"
-      },
-      "description": "Period end"
-     }
-    ]
-   }
-  },
-  "/api/v1/billings/{id}": {
-   "get": {
-    "tags": [
-     "Billing"
-    ],
-    "summary": "One bill with its items",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "billing": {
-           "$ref": "#/components/schemas/Bill"
-          },
-          "items": {
-           "type": "array",
-           "items": {
-            "$ref": "#/components/schemas/BillItem"
-           }
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     }
+    {
+      "name": "Billing"
     },
-    "parameters": [
-     {
-      "name": "id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "format": "uuid"
-      },
-      "description": "The resource's id"
-     }
-    ]
-   }
-  },
-  "/api/v1/billings/summary": {
-   "get": {
-    "tags": [
-     "Billing"
-    ],
-    "summary": "Everything paid in a period",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "from": {
-           "type": "string",
-           "format": "date-time"
-          },
-          "to": {
-           "type": "string",
-           "format": "date-time"
-          },
-          "bills": {
-           "type": "array",
-           "items": {
-            "allOf": [
-             {
-              "$ref": "#/components/schemas/Bill"
-             },
-             {
-              "type": "object",
-              "properties": {
-               "items": {
-                "type": "array",
-                "items": {
-                 "$ref": "#/components/schemas/BillItem"
+    {
+      "name": "Projects"
+    },
+    {
+      "name": "Locations"
+    },
+    {
+      "name": "Servers"
+    },
+    {
+      "name": "Containers"
+    },
+    {
+      "name": "Usage"
+    },
+    {
+      "name": "Market"
+    },
+    {
+      "name": "DNS"
+    },
+    {
+      "name": "Network"
+    },
+    {
+      "name": "Inbox"
+    },
+    {
+      "name": "Pricing"
+    }
+  ],
+  "paths": {
+    "/api/v1/me/credit": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Your credit",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Credit"
                 }
-               }
               }
-             }
-            ]
-           }
+            }
           },
-          "total": {
-           "type": "number",
-           "description": "Refunds subtracted"
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           }
-         }
-        }
-       }
+        },
+        "description": "How much credit you have left. Top up on the website (Overview → Billing)."
       }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "400": {
-      "$ref": "#/components/responses/E400"
-     }
     },
-    "parameters": [
-     {
-      "name": "range",
-      "in": "query",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "enum": [
-        "24h",
-        "7d",
-        "30d"
-       ]
-      },
-      "description": "The period, ending now"
-     }
-    ]
-   }
-  },
-  "/api/v1/billings/invoices": {
-   "get": {
-    "tags": [
-     "Billing"
-    ],
-    "summary": "Invoices you issued",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "invoices": {
-           "type": "array",
-           "items": {
-            "type": "object",
-            "properties": {
-             "id": {
-              "type": "string",
-              "format": "uuid"
-             },
-             "number": {
-              "type": "string"
-             },
-             "issued_at": {
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Your account",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          }
+        }
+      }
+    },
+    "/api/v1/billings": {
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "summary": "Your bills",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "billings": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Bill"
+                      }
+                    },
+                    "total_spent": {
+                      "type": "number",
+                      "description": "Within from / to, refunds subtracted"
+                    },
+                    "spending": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/E400"
+          }
+        },
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
               "type": "string",
               "format": "date-time"
-             },
-             "net": {
-              "type": "number"
-             },
-             "bill_to": {
-              "type": "string"
-             }
-            }
-           }
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     }
-    }
-   }
-  },
-  "/api/v1/billings/invoices/{id}": {
-   "get": {
-    "tags": [
-     "Billing"
-    ],
-    "summary": "One invoice, as issued",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "invoice": {
-           "$ref": "#/components/schemas/Invoice"
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     }
-    },
-    "parameters": [
-     {
-      "name": "id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "format": "uuid"
-      },
-      "description": "The resource's id"
-     }
-    ]
-   }
-  },
-  "/api/v1/projects": {
-   "get": {
-    "tags": [
-     "Projects"
-    ],
-    "summary": "Your projects",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "projects": {
-           "type": "array",
-           "items": {
-            "$ref": "#/components/schemas/Project"
-           }
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     }
-    }
-   }
-  },
-  "/api/v1/projects/{id}": {
-   "get": {
-    "tags": [
-     "Projects"
-    ],
-    "summary": "One project",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "project": {
-           "$ref": "#/components/schemas/Project"
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     }
-    },
-    "parameters": [
-     {
-      "name": "id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "format": "uuid"
-      },
-      "description": "The resource's id"
-     }
-    ]
-   }
-  },
-  "/api/v1/availability-zones": {
-   "get": {
-    "tags": [
-     "Locations"
-    ],
-    "summary": "Locations you can order in",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "availability_zones": {
-           "type": "array",
-           "items": {
-            "$ref": "#/components/schemas/Zone"
-           }
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     }
-    }
-   }
-  },
-  "/api/v1/servers": {
-   "get": {
-    "tags": [
-     "Servers"
-    ],
-    "summary": "Your servers",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "servers": {
-           "type": "array",
-           "items": {
-            "$ref": "#/components/schemas/Server"
-           }
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     }
-    }
-   }
-  },
-  "/api/v1/servers/{id}/actions": {
-   "post": {
-    "tags": [
-     "Servers"
-    ],
-    "summary": "Start, stop, edit (resize) or delete a server",
-    "responses": {
-     "202": {
-      "description": "Queued: last_action shows the outcome",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "server": {
-           "$ref": "#/components/schemas/Server"
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "400": {
-      "$ref": "#/components/responses/E400"
-     },
-     "402": {
-      "$ref": "#/components/responses/E402"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     },
-     "409": {
-      "$ref": "#/components/responses/E409"
-     },
-     "429": {
-      "$ref": "#/components/responses/E429"
-     }
-    },
-    "description": "Resizing charges one month at the new size and refunds the unused time of the current period; deleting refunds the unused time.",
-    "parameters": [
-     {
-      "name": "id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "format": "uuid"
-      },
-      "description": "The resource's id"
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "oneOf": [
-         {
-          "type": "object",
-          "properties": {
-           "action": {
-            "type": "string",
-            "enum": [
-             "start",
-             "stop",
-             "delete"
-            ]
-           }
+            },
+            "description": "Period start (with to)"
           },
-          "required": [
-           "action"
-          ]
-         },
-         {
-          "type": "object",
-          "properties": {
-           "action": {
-            "type": "string",
-            "enum": [
-             "edit"
-            ]
-           },
-           "name": {
-            "type": "string"
-           },
-           "cores": {
-            "type": "integer"
-           },
-           "memory_mb": {
-            "type": "integer"
-           },
-           "disk_gb": {
-            "type": "integer",
-            "description": "The boot disk's new size, GB (grow only)"
-           }
-          },
-          "required": [
-           "action"
-          ]
-         }
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Period end"
+          }
         ]
-       }
       }
-     }
+    },
+    "/api/v1/billings/{id}": {
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "summary": "One bill with its items",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "billing": {
+                      "$ref": "#/components/schemas/Bill"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BillItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The resource's id"
+          }
+        ]
+      }
+    },
+    "/api/v1/billings/summary": {
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "summary": "Everything paid in a period",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "to": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "bills": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/Bill"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "items": {
+                                "type": "array",
+                                "items": {
+                                  "$ref": "#/components/schemas/BillItem"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "number",
+                      "description": "Refunds subtracted"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/E400"
+          }
+        },
+        "parameters": [
+          {
+            "name": "range",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "24h",
+                "7d",
+                "30d"
+              ]
+            },
+            "description": "The period, ending now"
+          }
+        ]
+      }
+    },
+    "/api/v1/billings/invoices": {
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "summary": "Invoices you issued",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "invoices": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "number": {
+                            "type": "string"
+                          },
+                          "issued_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "net": {
+                            "type": "number"
+                          },
+                          "bill_to": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/billings/invoices/{id}": {
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "summary": "One invoice, as issued",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "invoice": {
+                      "$ref": "#/components/schemas/Invoice"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The resource's id"
+          }
+        ]
+      }
+    },
+    "/api/v1/projects": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Your projects",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "projects": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Project"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{id}": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "One project",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "project": {
+                      "$ref": "#/components/schemas/Project"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The resource's id"
+          }
+        ]
+      }
+    },
+    "/api/v1/availability-zones": {
+      "get": {
+        "tags": [
+          "Locations"
+        ],
+        "summary": "Locations you can order in",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "availability_zones": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Zone"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/servers": {
+      "get": {
+        "tags": [
+          "Servers"
+        ],
+        "summary": "Your servers",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "servers": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Server"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/actions": {
+      "post": {
+        "tags": [
+          "Servers"
+        ],
+        "summary": "Start, stop, edit (resize) or delete a server",
+        "responses": {
+          "202": {
+            "description": "Queued: last_action shows the outcome",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "server": {
+                      "$ref": "#/components/schemas/Server"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/E400"
+          },
+          "402": {
+            "$ref": "#/components/responses/E402"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          },
+          "409": {
+            "$ref": "#/components/responses/E409"
+          },
+          "429": {
+            "$ref": "#/components/responses/E429"
+          }
+        },
+        "description": "Resizing charges one month at the new size and refunds the unused time of the current period; deleting refunds the unused time.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The resource's id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "start",
+                          "stop",
+                          "delete"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "edit"
+                        ]
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "cores": {
+                        "type": "integer"
+                      },
+                      "memory_mb": {
+                        "type": "integer"
+                      },
+                      "disk_gb": {
+                        "type": "integer",
+                        "description": "The boot disk's new size, GB (grow only)"
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servers/{id}/renew": {
+      "post": {
+        "tags": [
+          "Servers"
+        ],
+        "summary": "Renew a suspended server",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "server": {
+                      "$ref": "#/components/schemas/Server"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "402": {
+            "$ref": "#/components/responses/E402"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          },
+          "409": {
+            "$ref": "#/components/responses/E409"
+          }
+        },
+        "description": "Pays one more month from your credit and starts it again (the buyer only).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The resource's id"
+          }
+        ]
+      }
+    },
+    "/api/v1/servers/{id}/auto-renew": {
+      "put": {
+        "tags": [
+          "Servers"
+        ],
+        "summary": "Turn auto-renew on or off",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "server": {
+                      "$ref": "#/components/schemas/Server"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/E400"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          },
+          "409": {
+            "$ref": "#/components/responses/E409"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The resource's id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "auto_renew": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "auto_renew"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/containers": {
+      "get": {
+        "tags": [
+          "Containers"
+        ],
+        "summary": "Your containers",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "containers": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Container"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/containers/{id}/start": {
+      "post": {
+        "tags": [
+          "Containers"
+        ],
+        "summary": "Start a container",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "container": {
+                      "$ref": "#/components/schemas/Container"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          },
+          "409": {
+            "$ref": "#/components/responses/E409"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The resource's id"
+          }
+        ]
+      }
+    },
+    "/api/v1/containers/{id}/stop": {
+      "post": {
+        "tags": [
+          "Containers"
+        ],
+        "summary": "Stop a container",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "container": {
+                      "$ref": "#/components/schemas/Container"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          },
+          "409": {
+            "$ref": "#/components/responses/E409"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The resource's id"
+          }
+        ]
+      }
+    },
+    "/api/v1/containers/{id}": {
+      "delete": {
+        "tags": [
+          "Containers"
+        ],
+        "summary": "Delete (or cancel) a container",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "container": {
+                      "$ref": "#/components/schemas/Container"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          },
+          "409": {
+            "$ref": "#/components/responses/E409"
+          }
+        },
+        "description": "Paid containers get the unused time back (all of it if it never ran).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The resource's id"
+          }
+        ]
+      }
+    },
+    "/api/v1/containers/{id}/logs": {
+      "get": {
+        "tags": [
+          "Containers"
+        ],
+        "summary": "A container's latest logs",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "logs": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/E400"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          },
+          "409": {
+            "$ref": "#/components/responses/E409"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The resource's id"
+          },
+          {
+            "name": "tail",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2000
+            },
+            "description": "Lines (default 300)"
+          }
+        ]
+      }
+    },
+    "/api/v1/usage": {
+      "get": {
+        "tags": [
+          "Usage"
+        ],
+        "summary": "CPU / RAM / disk / network of your servers or containers",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Usage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/E400"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          }
+        },
+        "parameters": [
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "servers",
+                "containers"
+              ]
+            },
+            "description": "Default servers"
+          },
+          {
+            "name": "server",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "all (default) or a server id"
+          },
+          {
+            "name": "container",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "all (default) or a container id (scope=containers)"
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1d",
+                "7d",
+                "30d",
+                "custom"
+              ]
+            },
+            "description": "Default 1d"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "range=custom"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "range=custom"
+          }
+        ]
+      }
+    },
+    "/api/v1/market/compute/options": {
+      "get": {
+        "tags": [
+          "Market"
+        ],
+        "summary": "What a compute instance order can choose (OS, rates, packs, limits)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/market/compute/quote": {
+      "post": {
+        "tags": [
+          "Market"
+        ],
+        "summary": "Price a compute instance (nothing is charged)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/E400"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComputeOrderRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market/compute/orders": {
+      "get": {
+        "tags": [
+          "Market"
+        ],
+        "summary": "Your compute instance orders",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orders": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ComputeOrder"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Market"
+        ],
+        "summary": "Order a compute instance (prepaid from your credit)",
+        "responses": {
+          "201": {
+            "description": "Paid; created within minutes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "order": {
+                      "$ref": "#/components/schemas/ComputeOrder"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/E400"
+          },
+          "402": {
+            "$ref": "#/components/responses/E402"
+          },
+          "409": {
+            "$ref": "#/components/responses/E409"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComputeOrderRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market/compute/orders/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Market"
+        ],
+        "summary": "Cancel an order still waiting for a host (full refund)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "order": {
+                      "$ref": "#/components/schemas/ComputeOrder"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          },
+          "409": {
+            "$ref": "#/components/responses/E409"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The resource's id"
+          }
+        ]
+      }
+    },
+    "/api/v1/market/containers/options": {
+      "get": {
+        "tags": [
+          "Market"
+        ],
+        "summary": "What a container order can choose",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/market/containers": {
+      "post": {
+        "tags": [
+          "Market"
+        ],
+        "summary": "Order a container",
+        "responses": {
+          "201": {
+            "description": "Queued; created within minutes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "container": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/E400"
+          },
+          "402": {
+            "$ref": "#/components/responses/E402"
+          },
+          "409": {
+            "$ref": "#/components/responses/E409"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContainerOrderRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dns": {
+      "get": {
+        "tags": [
+          "DNS"
+        ],
+        "summary": "Your DNS names",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "records": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DNSRecord"
+                      }
+                    },
+                    "domain": {
+                      "type": "string",
+                      "example": "in.mhon.cloud"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "DNS"
+        ],
+        "summary": "Create a DNS name for a container port",
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "record": {
+                      "$ref": "#/components/schemas/DNSRecord"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/E400"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          },
+          "409": {
+            "$ref": "#/components/responses/E409"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DNSRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dns/check": {
+      "get": {
+        "tags": [
+          "DNS"
+        ],
+        "summary": "Is a name free?",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "available": {
+                      "type": "boolean"
+                    },
+                    "reason": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The name to check"
+          }
+        ]
+      }
+    },
+    "/api/v1/dns/{id}": {
+      "put": {
+        "tags": [
+          "DNS"
+        ],
+        "summary": "Point a DNS name at another container / port",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "record": {
+                      "$ref": "#/components/schemas/DNSRecord"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/E400"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          },
+          "409": {
+            "$ref": "#/components/responses/E409"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The resource's id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DNSRequest"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "DNS"
+        ],
+        "summary": "Delete a DNS name",
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/E404"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The resource's id"
+          }
+        ]
+      }
+    },
+    "/api/v1/public-ips": {
+      "get": {
+        "tags": [
+          "Network"
+        ],
+        "summary": "Your public IPs",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "public_ips": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PublicIP"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/announcements": {
+      "get": {
+        "tags": [
+          "Inbox"
+        ],
+        "summary": "Your announcements and messages",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "announcements": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/InboxItem"
+                      }
+                    },
+                    "unread": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/quotas": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "The platform's limits",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "quotas": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/public/pricing": {
+      "get": {
+        "tags": [
+          "Pricing"
+        ],
+        "summary": "Current prices and packs (no key needed)",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
     }
-   }
   },
-  "/api/v1/servers/{id}/renew": {
-   "post": {
-    "tags": [
-     "Servers"
-    ],
-    "summary": "Renew a suspended server",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "server": {
-           "$ref": "#/components/schemas/Server"
-          }
-         }
-        }
-       }
+  "components": {
+    "securitySchemes": {
+      "apiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "mhc_...",
+        "description": "A personal API key from Inventory → Interfaces → API"
       }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "402": {
-      "$ref": "#/components/responses/E402"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     },
-     "409": {
-      "$ref": "#/components/responses/E409"
-     }
     },
-    "description": "Pays one more month from your credit and starts it again (the buyer only).",
-    "parameters": [
-     {
-      "name": "id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "format": "uuid"
-      },
-      "description": "The resource's id"
-     }
-    ]
-   }
-  },
-  "/api/v1/servers/{id}/auto-renew": {
-   "put": {
-    "tags": [
-     "Servers"
-    ],
-    "summary": "Turn auto-renew on or off",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "server": {
-           "$ref": "#/components/schemas/Server"
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "400": {
-      "$ref": "#/components/responses/E400"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     },
-     "409": {
-      "$ref": "#/components/responses/E409"
-     }
-    },
-    "parameters": [
-     {
-      "name": "id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "format": "uuid"
-      },
-      "description": "The resource's id"
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
+    "schemas": {
+      "Error": {
         "type": "object",
         "properties": {
-         "auto_renew": {
-          "type": "boolean"
-         }
+          "error": {
+            "type": "string",
+            "description": "What went wrong, for people"
+          }
         },
         "required": [
-         "auto_renew"
+          "error"
         ]
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/v1/containers": {
-   "get": {
-    "tags": [
-     "Containers"
-    ],
-    "summary": "Your containers",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "containers": {
-           "type": "array",
-           "items": {
-            "$ref": "#/components/schemas/Container"
-           }
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     }
-    }
-   }
-  },
-  "/api/v1/containers/{id}/start": {
-   "post": {
-    "tags": [
-     "Containers"
-    ],
-    "summary": "Start a container",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "container": {
-           "$ref": "#/components/schemas/Container"
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     },
-     "409": {
-      "$ref": "#/components/responses/E409"
-     }
-    },
-    "parameters": [
-     {
-      "name": "id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "format": "uuid"
       },
-      "description": "The resource's id"
-     }
-    ]
-   }
-  },
-  "/api/v1/containers/{id}/stop": {
-   "post": {
-    "tags": [
-     "Containers"
-    ],
-    "summary": "Stop a container",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "container": {
-           "$ref": "#/components/schemas/Container"
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     },
-     "409": {
-      "$ref": "#/components/responses/E409"
-     }
-    },
-    "parameters": [
-     {
-      "name": "id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "format": "uuid"
-      },
-      "description": "The resource's id"
-     }
-    ]
-   }
-  },
-  "/api/v1/containers/{id}": {
-   "delete": {
-    "tags": [
-     "Containers"
-    ],
-    "summary": "Delete (or cancel) a container",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "container": {
-           "$ref": "#/components/schemas/Container"
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     },
-     "409": {
-      "$ref": "#/components/responses/E409"
-     }
-    },
-    "description": "Paid containers get the unused time back (all of it if it never ran).",
-    "parameters": [
-     {
-      "name": "id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "format": "uuid"
-      },
-      "description": "The resource's id"
-     }
-    ]
-   }
-  },
-  "/api/v1/containers/{id}/logs": {
-   "get": {
-    "tags": [
-     "Containers"
-    ],
-    "summary": "A container's latest logs",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "logs": {
-           "type": "string"
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "400": {
-      "$ref": "#/components/responses/E400"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     },
-     "409": {
-      "$ref": "#/components/responses/E409"
-     }
-    },
-    "parameters": [
-     {
-      "name": "id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "format": "uuid"
-      },
-      "description": "The resource's id"
-     },
-     {
-      "name": "tail",
-      "in": "query",
-      "required": false,
-      "schema": {
-       "type": "integer",
-       "minimum": 1,
-       "maximum": 2000
-      },
-      "description": "Lines (default 300)"
-     }
-    ]
-   }
-  },
-  "/api/v1/usage": {
-   "get": {
-    "tags": [
-     "Usage"
-    ],
-    "summary": "CPU / RAM / disk / network of your servers or containers",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/Usage"
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "400": {
-      "$ref": "#/components/responses/E400"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     }
-    },
-    "parameters": [
-     {
-      "name": "scope",
-      "in": "query",
-      "required": false,
-      "schema": {
-       "type": "string",
-       "enum": [
-        "servers",
-        "containers"
-       ]
-      },
-      "description": "Default servers"
-     },
-     {
-      "name": "server",
-      "in": "query",
-      "required": false,
-      "schema": {
-       "type": "string"
-      },
-      "description": "all (default) or a server id"
-     },
-     {
-      "name": "container",
-      "in": "query",
-      "required": false,
-      "schema": {
-       "type": "string"
-      },
-      "description": "all (default) or a container id (scope=containers)"
-     },
-     {
-      "name": "range",
-      "in": "query",
-      "required": false,
-      "schema": {
-       "type": "string",
-       "enum": [
-        "1d",
-        "7d",
-        "30d",
-        "custom"
-       ]
-      },
-      "description": "Default 1d"
-     },
-     {
-      "name": "from",
-      "in": "query",
-      "required": false,
-      "schema": {
-       "type": "string",
-       "format": "date-time"
-      },
-      "description": "range=custom"
-     },
-     {
-      "name": "to",
-      "in": "query",
-      "required": false,
-      "schema": {
-       "type": "string",
-       "format": "date-time"
-      },
-      "description": "range=custom"
-     }
-    ]
-   }
-  },
-  "/api/v1/market/compute/options": {
-   "get": {
-    "tags": [
-     "Market"
-    ],
-    "summary": "What a compute instance order can choose (OS, rates, packs, limits)",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object"
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     }
-    }
-   }
-  },
-  "/api/v1/market/compute/quote": {
-   "post": {
-    "tags": [
-     "Market"
-    ],
-    "summary": "Price a compute instance (nothing is charged)",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/Quote"
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "400": {
-      "$ref": "#/components/responses/E400"
-     }
-    },
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/ComputeOrderRequest"
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/v1/market/compute/orders": {
-   "get": {
-    "tags": [
-     "Market"
-    ],
-    "summary": "Your compute instance orders",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "orders": {
-           "type": "array",
-           "items": {
-            "$ref": "#/components/schemas/ComputeOrder"
-           }
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     }
-    }
-   },
-   "post": {
-    "tags": [
-     "Market"
-    ],
-    "summary": "Order a compute instance (prepaid from your credit)",
-    "responses": {
-     "201": {
-      "description": "Paid; created within minutes",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "order": {
-           "$ref": "#/components/schemas/ComputeOrder"
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "400": {
-      "$ref": "#/components/responses/E400"
-     },
-     "402": {
-      "$ref": "#/components/responses/E402"
-     },
-     "409": {
-      "$ref": "#/components/responses/E409"
-     }
-    },
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/ComputeOrderRequest"
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/v1/market/compute/orders/{id}/cancel": {
-   "post": {
-    "tags": [
-     "Market"
-    ],
-    "summary": "Cancel an order still waiting for a host (full refund)",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "order": {
-           "$ref": "#/components/schemas/ComputeOrder"
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     },
-     "409": {
-      "$ref": "#/components/responses/E409"
-     }
-    },
-    "parameters": [
-     {
-      "name": "id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "format": "uuid"
-      },
-      "description": "The resource's id"
-     }
-    ]
-   }
-  },
-  "/api/v1/market/containers/options": {
-   "get": {
-    "tags": [
-     "Market"
-    ],
-    "summary": "What a container order can choose",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object"
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     }
-    }
-   }
-  },
-  "/api/v1/market/containers": {
-   "post": {
-    "tags": [
-     "Market"
-    ],
-    "summary": "Order a container",
-    "responses": {
-     "201": {
-      "description": "Queued; created within minutes",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "container": {
-           "type": "object"
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "400": {
-      "$ref": "#/components/responses/E400"
-     },
-     "402": {
-      "$ref": "#/components/responses/E402"
-     },
-     "409": {
-      "$ref": "#/components/responses/E409"
-     }
-    },
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/ContainerOrderRequest"
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/v1/dns": {
-   "get": {
-    "tags": [
-     "DNS"
-    ],
-    "summary": "Your DNS names",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "records": {
-           "type": "array",
-           "items": {
-            "$ref": "#/components/schemas/DNSRecord"
-           }
+      "Credit": {
+        "type": "object",
+        "properties": {
+          "credit": {
+            "type": "number",
+            "description": "Your credit, baht"
           },
-          "domain": {
-           "type": "string",
-           "example": "in.mhon.cloud"
+          "currency": {
+            "type": "string",
+            "example": "THB"
           }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     }
-    }
-   },
-   "post": {
-    "tags": [
-     "DNS"
-    ],
-    "summary": "Create a DNS name for a container port",
-    "responses": {
-     "201": {
-      "description": "Created",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "record": {
-           "$ref": "#/components/schemas/DNSRecord"
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "400": {
-      "$ref": "#/components/responses/E400"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     },
-     "409": {
-      "$ref": "#/components/responses/E409"
-     }
-    },
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/DNSRequest"
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/v1/dns/check": {
-   "get": {
-    "tags": [
-     "DNS"
-    ],
-    "summary": "Is a name free?",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "available": {
-           "type": "boolean"
+        },
+        "required": [
+          "credit",
+          "currency"
+        ]
+      },
+      "Me": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "username": {
+                "type": "string",
+                "nullable": true
+              },
+              "email": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "pending_verification",
+                  "inactive",
+                  "suspended"
+                ]
+              },
+              "credit": {
+                "type": "number"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
           },
-          "reason": {
-           "type": "string",
-           "nullable": true
+          "profile": {
+            "type": "object",
+            "properties": {
+              "first_name": {
+                "type": "string",
+                "nullable": true
+              },
+              "last_name": {
+                "type": "string",
+                "nullable": true
+              },
+              "phone_number": {
+                "type": "string",
+                "nullable": true
+              }
+            }
           }
-         }
         }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     }
-    },
-    "parameters": [
-     {
-      "name": "name",
-      "in": "query",
-      "required": true,
-      "schema": {
-       "type": "string"
       },
-      "description": "The name to check"
-     }
-    ]
-   }
-  },
-  "/api/v1/dns/{id}": {
-   "put": {
-    "tags": [
-     "DNS"
-    ],
-    "summary": "Point a DNS name at another container / port",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "record": {
-           "$ref": "#/components/schemas/DNSRecord"
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "400": {
-      "$ref": "#/components/responses/E400"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     },
-     "409": {
-      "$ref": "#/components/responses/E409"
-     }
-    },
-    "parameters": [
-     {
-      "name": "id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "format": "uuid"
-      },
-      "description": "The resource's id"
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/DNSRequest"
-       }
-      }
-     }
-    }
-   },
-   "delete": {
-    "tags": [
-     "DNS"
-    ],
-    "summary": "Delete a DNS name",
-    "responses": {
-     "204": {
-      "description": "Deleted"
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     },
-     "404": {
-      "$ref": "#/components/responses/E404"
-     }
-    },
-    "parameters": [
-     {
-      "name": "id",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "string",
-       "format": "uuid"
-      },
-      "description": "The resource's id"
-     }
-    ]
-   }
-  },
-  "/api/v1/public-ips": {
-   "get": {
-    "tags": [
-     "Network"
-    ],
-    "summary": "Your public IPs",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "public_ips": {
-           "type": "array",
-           "items": {
-            "$ref": "#/components/schemas/PublicIP"
-           }
-          }
-         }
-        }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     }
-    }
-   }
-  },
-  "/api/v1/announcements": {
-   "get": {
-    "tags": [
-     "Inbox"
-    ],
-    "summary": "Your announcements and messages",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "announcements": {
-           "type": "array",
-           "items": {
-            "$ref": "#/components/schemas/InboxItem"
-           }
+      "Bill": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
-          "unread": {
-           "type": "integer"
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unpaid",
+              "paid",
+              "overdue",
+              "void"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "description": "refund = money given back (subtract it)",
+            "enum": [
+              "charge",
+              "resize",
+              "refund"
+            ]
+          },
+          "amount": {
+            "type": "number"
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paid_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "counts": {
+            "type": "object",
+            "properties": {
+              "server": {
+                "type": "integer"
+              },
+              "network": {
+                "type": "integer"
+              },
+              "security": {
+                "type": "integer"
+              },
+              "additional": {
+                "type": "integer"
+              }
+            }
           }
-         }
         }
-       }
-      }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     }
-    }
-   }
-  },
-  "/api/v1/quotas": {
-   "get": {
-    "tags": [
-     "Account"
-    ],
-    "summary": "The platform's limits",
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "properties": {
-          "quotas": {
-           "type": "object",
-           "additionalProperties": {
+      },
+      "BillItem": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "server",
+              "network",
+              "security",
+              "additional"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      },
+      "Invoice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string",
+            "example": "INV-2026-001"
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "due_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "period_from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "period_to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bill_to": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "person",
+                  "company"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              },
+              "tax_id": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              }
+            }
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "unit_price": {
+                  "type": "number"
+                },
+                "amount": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "subtotal": {
+            "type": "number"
+          },
+          "wht_rate": {
+            "type": "number",
+            "description": "Withholding tax, percent"
+          },
+          "wht": {
+            "type": "number"
+          },
+          "net": {
+            "type": "number"
+          }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "company"
+            ]
+          },
+          "is_default": {
+            "type": "boolean"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "company_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "my_role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "admin",
+              "staff",
+              "guest"
+            ]
+          },
+          "member_count": {
             "type": "integer"
-           }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deleting_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
-         }
         }
-       }
+      },
+      "Zone": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          }
+        }
+      },
+      "Server": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "example": "running"
+          },
+          "vmid": {
+            "type": "integer"
+          },
+          "cpu_cores": {
+            "type": "integer"
+          },
+          "cpu_usage": {
+            "type": "number",
+            "description": "Percent",
+            "nullable": true
+          },
+          "mem_used": {
+            "type": "integer",
+            "description": "Bytes",
+            "nullable": true
+          },
+          "mem_total": {
+            "type": "integer",
+            "description": "Bytes",
+            "nullable": true
+          },
+          "disk_total": {
+            "type": "integer",
+            "description": "Bytes",
+            "nullable": true
+          },
+          "uptime": {
+            "type": "integer",
+            "description": "Seconds",
+            "nullable": true
+          },
+          "interfaces": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "ips": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "agent",
+                    "cloud-init"
+                  ]
+                }
+              }
+            },
+            "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "pending_reboot": {
+            "type": "boolean",
+            "description": "Resized while running: stop and start it to apply"
+          },
+          "zone": {
+            "$ref": "#/components/schemas/Zone",
+            "nullable": true
+          },
+          "project": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "my_role": {
+            "type": "string"
+          },
+          "last_action": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "running",
+                  "done",
+                  "failed"
+                ]
+              },
+              "error": {
+                "type": "string",
+                "nullable": true
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "finished_at": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              }
+            },
+            "nullable": true
+          },
+          "order": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "number": {
+                "type": "string",
+                "example": "ORD-000001"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "suspended"
+                ]
+              },
+              "expires_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "auto_renew": {
+                "type": "boolean"
+              },
+              "renewal_price": {
+                "type": "string",
+                "description": "One month, baht",
+                "example": "350.00"
+              },
+              "suspended_at": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "delete_at": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "mine": {
+                "type": "boolean",
+                "description": "You bought it (renewals take your credit)"
+              }
+            },
+            "description": "Its Market order; null = not bought in Market",
+            "nullable": true
+          }
+        }
+      },
+      "Container": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string",
+            "example": "CT-000001"
+          },
+          "name": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "creating",
+              "running",
+              "stopped",
+              "failed"
+            ]
+          },
+          "desired_state": {
+            "type": "string",
+            "enum": [
+              "running",
+              "stopped",
+              "deleted"
+            ]
+          },
+          "status_note": {
+            "type": "string",
+            "nullable": true
+          },
+          "cpu_cores": {
+            "type": "integer"
+          },
+          "ram_gb": {
+            "type": "integer"
+          },
+          "storage_gb": {
+            "type": "integer"
+          },
+          "ports": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "port": {
+                  "type": "integer"
+                },
+                "protocol": {
+                  "type": "string",
+                  "enum": [
+                    "http",
+                    "tcp",
+                    "udp"
+                  ]
+                },
+                "host_port": {
+                  "type": "integer",
+                  "description": "The public port",
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "dns_names": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "login_user": {
+            "type": "string",
+            "nullable": true
+          },
+          "address": {
+            "type": "string",
+            "description": "The public address to reach its ports",
+            "nullable": true
+          },
+          "mounts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "project": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "zone": {
+            "$ref": "#/components/schemas/Zone",
+            "nullable": true
+          },
+          "free": {
+            "type": "boolean"
+          },
+          "total": {
+            "type": "string",
+            "description": "Baht, 2 decimals",
+            "example": "350.00"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Usage": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "servers",
+              "containers"
+            ]
+          },
+          "servers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "project": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "containers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "project": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "hosts": {
+                "type": "integer",
+                "description": "Servers / containers reporting"
+              },
+              "cpu_used": {
+                "type": "number",
+                "description": "Cores busy"
+              },
+              "cpu_total": {
+                "type": "integer"
+              },
+              "mem_used": {
+                "type": "integer",
+                "description": "Bytes"
+              },
+              "mem_total": {
+                "type": "integer",
+                "description": "Bytes"
+              },
+              "disk_used": {
+                "type": "integer",
+                "description": "Bytes used (containers only)",
+                "nullable": true
+              },
+              "disk_total": {
+                "type": "integer",
+                "description": "Bytes allocated"
+              },
+              "net_in_bps": {
+                "type": "number",
+                "description": "Bytes / second"
+              },
+              "net_out_bps": {
+                "type": "number"
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "nullable": true
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "cpu_pct": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "ram_pct": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "storage_pct": {
+                  "type": "number",
+                  "description": "Containers only",
+                  "nullable": true
+                },
+                "disk_total": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "net_in_bps": {
+                  "type": "number"
+                },
+                "net_out_bps": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bucket_seconds": {
+            "type": "integer"
+          }
+        }
+      },
+      "Disk": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ssd",
+              "hdd"
+            ]
+          },
+          "size_gb": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "type",
+          "size_gb"
+        ]
+      },
+      "ComputeOrderRequest": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "The VM's name (a DNS label)"
+          },
+          "cpu_cores": {
+            "type": "integer"
+          },
+          "ram_gb": {
+            "type": "integer"
+          },
+          "disks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Disk"
+            }
+          },
+          "os": {
+            "type": "string",
+            "description": "One of options.os"
+          },
+          "availability_zone_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "auto_backup": {
+            "type": "boolean"
+          },
+          "backup_day": {
+            "type": "string",
+            "description": "daily | mon ... sun"
+          },
+          "backup_time": {
+            "type": "string",
+            "description": "HH:MM"
+          },
+          "public_ip": {
+            "type": "boolean"
+          },
+          "random_dns": {
+            "type": "boolean",
+            "description": "A free vm-xxxxxxxx.mhon.cloud name instead of a public IP"
+          },
+          "dns_label": {
+            "type": "string",
+            "description": "A free <label>.mhon.cloud name instead of a public IP (wins over random_dns)"
+          },
+          "period_months": {
+            "type": "integer",
+            "enum": [
+              1,
+              6,
+              12
+            ]
+          },
+          "coupon_code": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string",
+            "description": "The VM's login user (cloud-init)"
+          },
+          "password": {
+            "type": "string",
+            "description": "Optional; only a hash is kept"
+          },
+          "credential_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "project_id",
+          "name",
+          "cpu_cores",
+          "ram_gb",
+          "disks",
+          "os",
+          "availability_zone_id",
+          "period_months",
+          "username"
+        ]
+      },
+      "Quote": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "category": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "monthly": {
+                  "type": "string",
+                  "description": "Baht, 2 decimals",
+                  "example": "350.00"
+                }
+              }
+            }
+          },
+          "monthly": {
+            "type": "string",
+            "description": "Baht, 2 decimals",
+            "example": "350.00"
+          },
+          "period_months": {
+            "type": "integer"
+          },
+          "subtotal": {
+            "type": "string",
+            "description": "Baht, 2 decimals",
+            "example": "350.00"
+          },
+          "package": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "discount_pct": {
+                "type": "string"
+              },
+              "discount": {
+                "type": "string",
+                "description": "Baht, 2 decimals",
+                "example": "350.00"
+              }
+            },
+            "nullable": true
+          },
+          "period_discount_pct": {
+            "type": "string",
+            "description": "Baht, 2 decimals",
+            "example": "350.00"
+          },
+          "period_discount": {
+            "type": "string",
+            "description": "Baht, 2 decimals",
+            "example": "350.00"
+          },
+          "coupon": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "discount": {
+                "type": "string",
+                "description": "Baht, 2 decimals",
+                "example": "350.00"
+              }
+            },
+            "nullable": true
+          },
+          "coupon_error": {
+            "type": "string",
+            "nullable": true
+          },
+          "total": {
+            "type": "string",
+            "description": "Baht, 2 decimals",
+            "example": "350.00"
+          },
+          "credit": {
+            "type": "string",
+            "description": "Baht, 2 decimals",
+            "example": "350.00"
+          },
+          "enough_credit": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ComputeOrder": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string",
+            "example": "ORD-000001"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "provisioning",
+              "active",
+              "suspended",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "cpu_cores": {
+            "type": "integer"
+          },
+          "ram_gb": {
+            "type": "integer"
+          },
+          "disks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Disk"
+            }
+          },
+          "os": {
+            "type": "string"
+          },
+          "zone": {
+            "type": "string",
+            "nullable": true
+          },
+          "public_ip": {
+            "type": "boolean"
+          },
+          "dns_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "project": {
+            "type": "string",
+            "nullable": true
+          },
+          "period_months": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "string",
+            "description": "Baht, 2 decimals",
+            "example": "350.00"
+          },
+          "paid_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "public_ip_address": {
+            "type": "string",
+            "nullable": true
+          },
+          "provision_note": {
+            "type": "string",
+            "description": "Why it waits or failed",
+            "nullable": true
+          },
+          "provisioned_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "ContainerOrderRequest": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string",
+            "description": "A public image, e.g. nginx:latest"
+          },
+          "command": {
+            "type": "string"
+          },
+          "cpu_cores": {
+            "type": "integer"
+          },
+          "ram_gb": {
+            "type": "integer"
+          },
+          "storage_gb": {
+            "type": "integer"
+          },
+          "ports": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "port": {
+                  "type": "integer"
+                },
+                "protocol": {
+                  "type": "string",
+                  "enum": [
+                    "http",
+                    "tcp",
+                    "udp"
+                  ]
+                }
+              },
+              "required": [
+                "port",
+                "protocol"
+              ]
+            }
+          },
+          "env": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "availability_zone_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "period_months": {
+            "type": "integer",
+            "enum": [
+              1,
+              6,
+              12
+            ]
+          },
+          "dns_name": {
+            "type": "string",
+            "description": "Optional <name>.in.mhon.cloud"
+          },
+          "dns_kind": {
+            "type": "string",
+            "enum": [
+              "web",
+              "direct"
+            ]
+          },
+          "dns_port": {
+            "type": "integer"
+          },
+          "dns_protocol": {
+            "type": "string"
+          },
+          "dns_srv": {
+            "type": "string",
+            "enum": [
+              "",
+              "minecraft"
+            ]
+          },
+          "login_username": {
+            "type": "string",
+            "description": "Ubuntu image only"
+          },
+          "login_password": {
+            "type": "string",
+            "description": "Ubuntu image only"
+          },
+          "startup_script": {
+            "type": "string",
+            "description": "Ubuntu image only: a bash script (up to 16 KB) run as root at every start, in the background"
+          }
+        },
+        "required": [
+          "project_id",
+          "name",
+          "image",
+          "cpu_cores",
+          "ram_gb",
+          "storage_gb",
+          "availability_zone_id",
+          "period_months"
+        ],
+        "description": "Free when within the free plan (1 vCPU / 1 GB / 5 GB); otherwise prepaid from your credit. Uploading folders is only possible from the console."
+      },
+      "DNSRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "fqdn": {
+            "type": "string",
+            "example": "hello.in.mhon.cloud"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "web",
+              "direct"
+            ]
+          },
+          "srv": {
+            "type": "string",
+            "nullable": true
+          },
+          "target": {
+            "type": "object",
+            "description": "What it points at (a container port)"
+          },
+          "project": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "my_role": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "waiting"
+            ]
+          },
+          "status_note": {
+            "type": "string",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DNSRequest": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "One label: <name>.in.mhon.cloud"
+          },
+          "target_kind": {
+            "type": "string",
+            "enum": [
+              "container"
+            ]
+          },
+          "container_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "port": {
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string",
+            "description": "web = HTTPS for an HTTP port; direct = A (+ SRV) records for any TCP / UDP port",
+            "enum": [
+              "web",
+              "direct"
+            ]
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "http",
+              "tcp",
+              "udp"
+            ]
+          },
+          "srv": {
+            "type": "string",
+            "enum": [
+              "",
+              "minecraft"
+            ]
+          }
+        },
+        "required": [
+          "project_id",
+          "name",
+          "target_kind",
+          "container_id",
+          "port"
+        ]
+      },
+      "PublicIP": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "address": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "server",
+              "allocated"
+            ]
+          },
+          "project": {
+            "type": "object"
+          },
+          "server_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "reserved_until": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "description": "Other fields may be present"
+      },
+      "InboxItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "announcement",
+              "message"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "publish_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "read": {
+            "type": "boolean"
+          }
+        }
       }
-     },
-     "401": {
-      "$ref": "#/components/responses/Unauthorized"
-     },
-     "403": {
-      "$ref": "#/components/responses/Forbidden"
-     }
-    }
-   }
-  },
-  "/api/v1/public/pricing": {
-   "get": {
-    "tags": [
-     "Pricing"
-    ],
-    "summary": "Current prices and packs (no key needed)",
-    "security": [],
+    },
     "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object"
+      "Unauthorized": {
+        "description": "Missing, revoked or expired key",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
         }
-       }
+      },
+      "Forbidden": {
+        "description": "Not allowed (e.g. not the project's owner, or not available with an API key)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "E400": {
+        "description": "The request isn't valid",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "E402": {
+        "description": "Not enough credit",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "E404": {
+        "description": "Not found (or not yours)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "E409": {
+        "description": "Not possible in the current state",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "E429": {
+        "description": "Too soon: try again shortly",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
       }
-     }
     }
-   }
   }
- },
- "components": {
-  "securitySchemes": {
-   "apiKey": {
-    "type": "http",
-    "scheme": "bearer",
-    "bearerFormat": "mhc_...",
-    "description": "A personal API key from Overview → API"
-   }
-  },
-  "schemas": {
-   "Error": {
-    "type": "object",
-    "properties": {
-     "error": {
-      "type": "string",
-      "description": "What went wrong, for people"
-     }
-    },
-    "required": [
-     "error"
-    ]
-   },
-   "Credit": {
-    "type": "object",
-    "properties": {
-     "credit": {
-      "type": "number",
-      "description": "Your credit, baht"
-     },
-     "currency": {
-      "type": "string",
-      "example": "THB"
-     }
-    },
-    "required": [
-     "credit",
-     "currency"
-    ]
-   },
-   "Me": {
-    "type": "object",
-    "properties": {
-     "user": {
-      "type": "object",
-      "properties": {
-       "id": {
-        "type": "string",
-        "format": "uuid"
-       },
-       "username": {
-        "type": "string",
-        "nullable": true
-       },
-       "email": {
-        "type": "string"
-       },
-       "status": {
-        "type": "string",
-        "enum": [
-         "active",
-         "pending_verification",
-         "inactive",
-         "suspended"
-        ]
-       },
-       "credit": {
-        "type": "number"
-       },
-       "created_at": {
-        "type": "string",
-        "format": "date-time"
-       }
-      }
-     },
-     "profile": {
-      "type": "object",
-      "properties": {
-       "first_name": {
-        "type": "string",
-        "nullable": true
-       },
-       "last_name": {
-        "type": "string",
-        "nullable": true
-       },
-       "phone_number": {
-        "type": "string",
-        "nullable": true
-       }
-      }
-     }
-    }
-   },
-   "Bill": {
-    "type": "object",
-    "properties": {
-     "id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "name": {
-      "type": "string"
-     },
-     "status": {
-      "type": "string",
-      "enum": [
-       "unpaid",
-       "paid",
-       "overdue",
-       "void"
-      ]
-     },
-     "kind": {
-      "type": "string",
-      "description": "refund = money given back (subtract it)",
-      "enum": [
-       "charge",
-       "resize",
-       "refund"
-      ]
-     },
-     "amount": {
-      "type": "number"
-     },
-     "issued_at": {
-      "type": "string",
-      "format": "date-time"
-     },
-     "paid_at": {
-      "type": "string",
-      "format": "date-time",
-      "nullable": true
-     },
-     "counts": {
-      "type": "object",
-      "properties": {
-       "server": {
-        "type": "integer"
-       },
-       "network": {
-        "type": "integer"
-       },
-       "security": {
-        "type": "integer"
-       },
-       "additional": {
-        "type": "integer"
-       }
-      }
-     }
-    }
-   },
-   "BillItem": {
-    "type": "object",
-    "properties": {
-     "category": {
-      "type": "string",
-      "enum": [
-       "server",
-       "network",
-       "security",
-       "additional"
-      ]
-     },
-     "description": {
-      "type": "string"
-     },
-     "quantity": {
-      "type": "number"
-     },
-     "unit": {
-      "type": "string"
-     },
-     "amount": {
-      "type": "number"
-     }
-    }
-   },
-   "Invoice": {
-    "type": "object",
-    "properties": {
-     "id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "number": {
-      "type": "string",
-      "example": "INV-2026-001"
-     },
-     "issued_at": {
-      "type": "string",
-      "format": "date-time"
-     },
-     "due_at": {
-      "type": "string",
-      "format": "date-time"
-     },
-     "period_from": {
-      "type": "string",
-      "format": "date-time"
-     },
-     "period_to": {
-      "type": "string",
-      "format": "date-time"
-     },
-     "bill_to": {
-      "type": "object",
-      "properties": {
-       "kind": {
-        "type": "string",
-        "enum": [
-         "person",
-         "company"
-        ]
-       },
-       "name": {
-        "type": "string"
-       },
-       "address": {
-        "type": "string"
-       },
-       "tax_id": {
-        "type": "string"
-       },
-       "email": {
-        "type": "string"
-       }
-      }
-     },
-     "lines": {
-      "type": "array",
-      "items": {
-       "type": "object",
-       "properties": {
-        "description": {
-         "type": "string"
-        },
-        "quantity": {
-         "type": "number"
-        },
-        "unit": {
-         "type": "string"
-        },
-        "unit_price": {
-         "type": "number"
-        },
-        "amount": {
-         "type": "number"
-        }
-       }
-      }
-     },
-     "subtotal": {
-      "type": "number"
-     },
-     "wht_rate": {
-      "type": "number",
-      "description": "Withholding tax, percent"
-     },
-     "wht": {
-      "type": "number"
-     },
-     "net": {
-      "type": "number"
-     }
-    }
-   },
-   "Project": {
-    "type": "object",
-    "properties": {
-     "id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "name": {
-      "type": "string"
-     },
-     "description": {
-      "type": "string"
-     },
-     "kind": {
-      "type": "string",
-      "enum": [
-       "personal",
-       "company"
-      ]
-     },
-     "is_default": {
-      "type": "boolean"
-     },
-     "company_id": {
-      "type": "string",
-      "format": "uuid",
-      "nullable": true
-     },
-     "company_name": {
-      "type": "string",
-      "nullable": true
-     },
-     "my_role": {
-      "type": "string",
-      "enum": [
-       "owner",
-       "admin",
-       "staff",
-       "guest"
-      ]
-     },
-     "member_count": {
-      "type": "integer"
-     },
-     "created_at": {
-      "type": "string",
-      "format": "date-time"
-     },
-     "deleting_at": {
-      "type": "string",
-      "format": "date-time",
-      "nullable": true
-     }
-    }
-   },
-   "Zone": {
-    "type": "object",
-    "properties": {
-     "id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "name": {
-      "type": "string"
-     },
-     "region": {
-      "type": "string"
-     }
-    }
-   },
-   "Server": {
-    "type": "object",
-    "properties": {
-     "id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "name": {
-      "type": "string"
-     },
-     "status": {
-      "type": "string",
-      "example": "running"
-     },
-     "vmid": {
-      "type": "integer"
-     },
-     "cpu_cores": {
-      "type": "integer"
-     },
-     "cpu_usage": {
-      "type": "number",
-      "description": "Percent",
-      "nullable": true
-     },
-     "mem_used": {
-      "type": "integer",
-      "description": "Bytes",
-      "nullable": true
-     },
-     "mem_total": {
-      "type": "integer",
-      "description": "Bytes",
-      "nullable": true
-     },
-     "disk_total": {
-      "type": "integer",
-      "description": "Bytes",
-      "nullable": true
-     },
-     "uptime": {
-      "type": "integer",
-      "description": "Seconds",
-      "nullable": true
-     },
-     "interfaces": {
-      "type": "array",
-      "items": {
-       "type": "object",
-       "properties": {
-        "name": {
-         "type": "string"
-        },
-        "ips": {
-         "type": "array",
-         "items": {
-          "type": "string"
-         }
-        },
-        "source": {
-         "type": "string",
-         "enum": [
-          "agent",
-          "cloud-init"
-         ]
-        }
-       }
-      },
-      "nullable": true
-     },
-     "username": {
-      "type": "string",
-      "nullable": true
-     },
-     "pending_reboot": {
-      "type": "boolean",
-      "description": "Resized while running: stop and start it to apply"
-     },
-     "zone": {
-      "$ref": "#/components/schemas/Zone",
-      "nullable": true
-     },
-     "project": {
-      "type": "object",
-      "properties": {
-       "id": {
-        "type": "string",
-        "format": "uuid"
-       },
-       "name": {
-        "type": "string"
-       }
-      }
-     },
-     "my_role": {
-      "type": "string"
-     },
-     "last_action": {
-      "type": "object",
-      "properties": {
-       "action": {
-        "type": "string"
-       },
-       "status": {
-        "type": "string",
-        "enum": [
-         "pending",
-         "running",
-         "done",
-         "failed"
-        ]
-       },
-       "error": {
-        "type": "string",
-        "nullable": true
-       },
-       "created_at": {
-        "type": "string",
-        "format": "date-time"
-       },
-       "finished_at": {
-        "type": "string",
-        "format": "date-time",
-        "nullable": true
-       }
-      },
-      "nullable": true
-     },
-     "order": {
-      "type": "object",
-      "properties": {
-       "id": {
-        "type": "string",
-        "format": "uuid"
-       },
-       "number": {
-        "type": "string",
-        "example": "ORD-000001"
-       },
-       "status": {
-        "type": "string",
-        "enum": [
-         "active",
-         "suspended"
-        ]
-       },
-       "expires_at": {
-        "type": "string",
-        "format": "date-time"
-       },
-       "auto_renew": {
-        "type": "boolean"
-       },
-       "renewal_price": {
-        "type": "string",
-        "description": "One month, baht",
-        "example": "350.00"
-       },
-       "suspended_at": {
-        "type": "string",
-        "format": "date-time",
-        "nullable": true
-       },
-       "delete_at": {
-        "type": "string",
-        "format": "date-time",
-        "nullable": true
-       },
-       "mine": {
-        "type": "boolean",
-        "description": "You bought it (renewals take your credit)"
-       }
-      },
-      "description": "Its Market order; null = not bought in Market",
-      "nullable": true
-     }
-    }
-   },
-   "Container": {
-    "type": "object",
-    "properties": {
-     "id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "number": {
-      "type": "string",
-      "example": "CT-000001"
-     },
-     "name": {
-      "type": "string"
-     },
-     "image": {
-      "type": "string"
-     },
-     "status": {
-      "type": "string",
-      "enum": [
-       "pending",
-       "creating",
-       "running",
-       "stopped",
-       "failed"
-      ]
-     },
-     "desired_state": {
-      "type": "string",
-      "enum": [
-       "running",
-       "stopped",
-       "deleted"
-      ]
-     },
-     "status_note": {
-      "type": "string",
-      "nullable": true
-     },
-     "cpu_cores": {
-      "type": "integer"
-     },
-     "ram_gb": {
-      "type": "integer"
-     },
-     "storage_gb": {
-      "type": "integer"
-     },
-     "ports": {
-      "type": "array",
-      "items": {
-       "type": "object",
-       "properties": {
-        "port": {
-         "type": "integer"
-        },
-        "protocol": {
-         "type": "string",
-         "enum": [
-          "http",
-          "tcp",
-          "udp"
-         ]
-        },
-        "host_port": {
-         "type": "integer",
-         "description": "The public port",
-         "nullable": true
-        }
-       }
-      }
-     },
-     "dns_names": {
-      "type": "array",
-      "items": {
-       "type": "string"
-      }
-     },
-     "login_user": {
-      "type": "string",
-      "nullable": true
-     },
-     "address": {
-      "type": "string",
-      "description": "The public address to reach its ports",
-      "nullable": true
-     },
-     "mounts": {
-      "type": "array",
-      "items": {
-       "type": "string"
-      }
-     },
-     "project": {
-      "type": "object",
-      "properties": {
-       "id": {
-        "type": "string",
-        "format": "uuid"
-       },
-       "name": {
-        "type": "string"
-       }
-      }
-     },
-     "zone": {
-      "$ref": "#/components/schemas/Zone",
-      "nullable": true
-     },
-     "free": {
-      "type": "boolean"
-     },
-     "total": {
-      "type": "string",
-      "description": "Baht, 2 decimals",
-      "example": "350.00"
-     },
-     "expires_at": {
-      "type": "string",
-      "format": "date-time"
-     },
-     "started_at": {
-      "type": "string",
-      "format": "date-time",
-      "nullable": true
-     },
-     "created_at": {
-      "type": "string",
-      "format": "date-time"
-     }
-    }
-   },
-   "Usage": {
-    "type": "object",
-    "properties": {
-     "scope": {
-      "type": "string",
-      "enum": [
-       "servers",
-       "containers"
-      ]
-     },
-     "servers": {
-      "type": "array",
-      "items": {
-       "type": "object",
-       "properties": {
-        "id": {
-         "type": "string",
-         "format": "uuid"
-        },
-        "name": {
-         "type": "string"
-        },
-        "project": {
-         "type": "string"
-        }
-       }
-      }
-     },
-     "containers": {
-      "type": "array",
-      "items": {
-       "type": "object",
-       "properties": {
-        "id": {
-         "type": "string",
-         "format": "uuid"
-        },
-        "name": {
-         "type": "string"
-        },
-        "project": {
-         "type": "string"
-        }
-       }
-      }
-     },
-     "summary": {
-      "type": "object",
-      "properties": {
-       "hosts": {
-        "type": "integer",
-        "description": "Servers / containers reporting"
-       },
-       "cpu_used": {
-        "type": "number",
-        "description": "Cores busy"
-       },
-       "cpu_total": {
-        "type": "integer"
-       },
-       "mem_used": {
-        "type": "integer",
-        "description": "Bytes"
-       },
-       "mem_total": {
-        "type": "integer",
-        "description": "Bytes"
-       },
-       "disk_used": {
-        "type": "integer",
-        "description": "Bytes used (containers only)",
-        "nullable": true
-       },
-       "disk_total": {
-        "type": "integer",
-        "description": "Bytes allocated"
-       },
-       "net_in_bps": {
-        "type": "number",
-        "description": "Bytes / second"
-       },
-       "net_out_bps": {
-        "type": "number"
-       },
-       "updated_at": {
-        "type": "string",
-        "format": "date-time"
-       }
-      },
-      "nullable": true
-     },
-     "series": {
-      "type": "array",
-      "items": {
-       "type": "object",
-       "properties": {
-        "at": {
-         "type": "string",
-         "format": "date-time"
-        },
-        "cpu_pct": {
-         "type": "number",
-         "nullable": true
-        },
-        "ram_pct": {
-         "type": "number",
-         "nullable": true
-        },
-        "storage_pct": {
-         "type": "number",
-         "description": "Containers only",
-         "nullable": true
-        },
-        "disk_total": {
-         "type": "number",
-         "nullable": true
-        },
-        "net_in_bps": {
-         "type": "number"
-        },
-        "net_out_bps": {
-         "type": "number"
-        }
-       }
-      }
-     },
-     "from": {
-      "type": "string",
-      "format": "date-time"
-     },
-     "to": {
-      "type": "string",
-      "format": "date-time"
-     },
-     "bucket_seconds": {
-      "type": "integer"
-     }
-    }
-   },
-   "Disk": {
-    "type": "object",
-    "properties": {
-     "type": {
-      "type": "string",
-      "enum": [
-       "ssd",
-       "hdd"
-      ]
-     },
-     "size_gb": {
-      "type": "integer"
-     }
-    },
-    "required": [
-     "type",
-     "size_gb"
-    ]
-   },
-   "ComputeOrderRequest": {
-    "type": "object",
-    "properties": {
-     "project_id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "name": {
-      "type": "string",
-      "description": "The VM's name (a DNS label)"
-     },
-     "cpu_cores": {
-      "type": "integer"
-     },
-     "ram_gb": {
-      "type": "integer"
-     },
-     "disks": {
-      "type": "array",
-      "items": {
-       "$ref": "#/components/schemas/Disk"
-      }
-     },
-     "os": {
-      "type": "string",
-      "description": "One of options.os"
-     },
-     "availability_zone_id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "auto_backup": {
-      "type": "boolean"
-     },
-     "backup_day": {
-      "type": "string",
-      "description": "daily | mon ... sun"
-     },
-     "backup_time": {
-      "type": "string",
-      "description": "HH:MM"
-     },
-     "public_ip": {
-      "type": "boolean"
-     },
-     "random_dns": {
-      "type": "boolean",
-      "description": "A free vm-xxxxxxxx.mhon.cloud name instead of a public IP"
-     },
-     "period_months": {
-      "type": "integer",
-      "enum": [
-       1,
-       6,
-       12
-      ]
-     },
-     "coupon_code": {
-      "type": "string"
-     },
-     "username": {
-      "type": "string",
-      "description": "The VM's login user (cloud-init)"
-     },
-     "password": {
-      "type": "string",
-      "description": "Optional; only a hash is kept"
-     },
-     "credential_ids": {
-      "type": "array",
-      "items": {
-       "type": "string",
-       "format": "uuid"
-      }
-     }
-    },
-    "required": [
-     "project_id",
-     "name",
-     "cpu_cores",
-     "ram_gb",
-     "disks",
-     "os",
-     "availability_zone_id",
-     "period_months",
-     "username"
-    ]
-   },
-   "Quote": {
-    "type": "object",
-    "properties": {
-     "lines": {
-      "type": "array",
-      "items": {
-       "type": "object",
-       "properties": {
-        "category": {
-         "type": "string"
-        },
-        "label": {
-         "type": "string"
-        },
-        "monthly": {
-         "type": "string",
-         "description": "Baht, 2 decimals",
-         "example": "350.00"
-        }
-       }
-      }
-     },
-     "monthly": {
-      "type": "string",
-      "description": "Baht, 2 decimals",
-      "example": "350.00"
-     },
-     "period_months": {
-      "type": "integer"
-     },
-     "subtotal": {
-      "type": "string",
-      "description": "Baht, 2 decimals",
-      "example": "350.00"
-     },
-     "package": {
-      "type": "object",
-      "properties": {
-       "name": {
-        "type": "string"
-       },
-       "discount_pct": {
-        "type": "string"
-       },
-       "discount": {
-        "type": "string",
-        "description": "Baht, 2 decimals",
-        "example": "350.00"
-       }
-      },
-      "nullable": true
-     },
-     "period_discount_pct": {
-      "type": "string",
-      "description": "Baht, 2 decimals",
-      "example": "350.00"
-     },
-     "period_discount": {
-      "type": "string",
-      "description": "Baht, 2 decimals",
-      "example": "350.00"
-     },
-     "coupon": {
-      "type": "object",
-      "properties": {
-       "code": {
-        "type": "string"
-       },
-       "discount": {
-        "type": "string",
-        "description": "Baht, 2 decimals",
-        "example": "350.00"
-       }
-      },
-      "nullable": true
-     },
-     "coupon_error": {
-      "type": "string",
-      "nullable": true
-     },
-     "total": {
-      "type": "string",
-      "description": "Baht, 2 decimals",
-      "example": "350.00"
-     },
-     "credit": {
-      "type": "string",
-      "description": "Baht, 2 decimals",
-      "example": "350.00"
-     },
-     "enough_credit": {
-      "type": "boolean"
-     }
-    }
-   },
-   "ComputeOrder": {
-    "type": "object",
-    "properties": {
-     "id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "number": {
-      "type": "string",
-      "example": "ORD-000001"
-     },
-     "status": {
-      "type": "string",
-      "enum": [
-       "pending",
-       "provisioning",
-       "active",
-       "suspended",
-       "failed",
-       "cancelled"
-      ]
-     },
-     "name": {
-      "type": "string"
-     },
-     "cpu_cores": {
-      "type": "integer"
-     },
-     "ram_gb": {
-      "type": "integer"
-     },
-     "disks": {
-      "type": "array",
-      "items": {
-       "$ref": "#/components/schemas/Disk"
-      }
-     },
-     "os": {
-      "type": "string"
-     },
-     "zone": {
-      "type": "string",
-      "nullable": true
-     },
-     "public_ip": {
-      "type": "boolean"
-     },
-     "dns_name": {
-      "type": "string",
-      "nullable": true
-     },
-     "project": {
-      "type": "string",
-      "nullable": true
-     },
-     "period_months": {
-      "type": "integer"
-     },
-     "total": {
-      "type": "string",
-      "description": "Baht, 2 decimals",
-      "example": "350.00"
-     },
-     "paid_at": {
-      "type": "string",
-      "format": "date-time"
-     },
-     "expires_at": {
-      "type": "string",
-      "format": "date-time"
-     },
-     "public_ip_address": {
-      "type": "string",
-      "nullable": true
-     },
-     "provision_note": {
-      "type": "string",
-      "description": "Why it waits or failed",
-      "nullable": true
-     },
-     "provisioned_at": {
-      "type": "string",
-      "format": "date-time",
-      "nullable": true
-     }
-    }
-   },
-   "ContainerOrderRequest": {
-    "type": "object",
-    "properties": {
-     "project_id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "name": {
-      "type": "string"
-     },
-     "image": {
-      "type": "string",
-      "description": "A public image, e.g. nginx:latest"
-     },
-     "command": {
-      "type": "string"
-     },
-     "cpu_cores": {
-      "type": "integer"
-     },
-     "ram_gb": {
-      "type": "integer"
-     },
-     "storage_gb": {
-      "type": "integer"
-     },
-     "ports": {
-      "type": "array",
-      "items": {
-       "type": "object",
-       "properties": {
-        "port": {
-         "type": "integer"
-        },
-        "protocol": {
-         "type": "string",
-         "enum": [
-          "http",
-          "tcp",
-          "udp"
-         ]
-        }
-       },
-       "required": [
-        "port",
-        "protocol"
-       ]
-      }
-     },
-     "env": {
-      "type": "object",
-      "additionalProperties": {
-       "type": "string"
-      }
-     },
-     "availability_zone_id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "period_months": {
-      "type": "integer",
-      "enum": [
-       1,
-       6,
-       12
-      ]
-     },
-     "dns_name": {
-      "type": "string",
-      "description": "Optional <name>.in.mhon.cloud"
-     },
-     "dns_kind": {
-      "type": "string",
-      "enum": [
-       "web",
-       "direct"
-      ]
-     },
-     "dns_port": {
-      "type": "integer"
-     },
-     "dns_protocol": {
-      "type": "string"
-     },
-     "dns_srv": {
-      "type": "string",
-      "enum": [
-       "",
-       "minecraft"
-      ]
-     },
-     "login_username": {
-      "type": "string",
-      "description": "Ubuntu image only"
-     },
-     "login_password": {
-      "type": "string",
-      "description": "Ubuntu image only"
-     }
-    },
-    "required": [
-     "project_id",
-     "name",
-     "image",
-     "cpu_cores",
-     "ram_gb",
-     "storage_gb",
-     "availability_zone_id",
-     "period_months"
-    ],
-    "description": "Free when within the free plan (1 vCPU / 1 GB / 5 GB); otherwise prepaid from your credit. Uploading folders is only possible from the console."
-   },
-   "DNSRecord": {
-    "type": "object",
-    "properties": {
-     "id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "name": {
-      "type": "string"
-     },
-     "fqdn": {
-      "type": "string",
-      "example": "hello.in.mhon.cloud"
-     },
-     "kind": {
-      "type": "string",
-      "enum": [
-       "web",
-       "direct"
-      ]
-     },
-     "srv": {
-      "type": "string",
-      "nullable": true
-     },
-     "target": {
-      "type": "object",
-      "description": "What it points at (a container port)"
-     },
-     "project": {
-      "type": "object",
-      "properties": {
-       "id": {
-        "type": "string",
-        "format": "uuid"
-       },
-       "name": {
-        "type": "string"
-       }
-      }
-     },
-     "my_role": {
-      "type": "string"
-     },
-     "status": {
-      "type": "string",
-      "enum": [
-       "active",
-       "waiting"
-      ]
-     },
-     "status_note": {
-      "type": "string",
-      "nullable": true
-     },
-     "created_at": {
-      "type": "string",
-      "format": "date-time"
-     }
-    }
-   },
-   "DNSRequest": {
-    "type": "object",
-    "properties": {
-     "project_id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "name": {
-      "type": "string",
-      "description": "One label: <name>.in.mhon.cloud"
-     },
-     "target_kind": {
-      "type": "string",
-      "enum": [
-       "container"
-      ]
-     },
-     "container_id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "port": {
-      "type": "integer"
-     },
-     "kind": {
-      "type": "string",
-      "description": "web = HTTPS for an HTTP port; direct = A (+ SRV) records for any TCP / UDP port",
-      "enum": [
-       "web",
-       "direct"
-      ]
-     },
-     "protocol": {
-      "type": "string",
-      "enum": [
-       "http",
-       "tcp",
-       "udp"
-      ]
-     },
-     "srv": {
-      "type": "string",
-      "enum": [
-       "",
-       "minecraft"
-      ]
-     }
-    },
-    "required": [
-     "project_id",
-     "name",
-     "target_kind",
-     "container_id",
-     "port"
-    ]
-   },
-   "PublicIP": {
-    "type": "object",
-    "properties": {
-     "id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "address": {
-      "type": "string"
-     },
-     "source": {
-      "type": "string",
-      "enum": [
-       "server",
-       "allocated"
-      ]
-     },
-     "project": {
-      "type": "object"
-     },
-     "server_id": {
-      "type": "string",
-      "format": "uuid",
-      "nullable": true
-     },
-     "reserved_until": {
-      "type": "string",
-      "format": "date-time",
-      "nullable": true
-     }
-    },
-    "description": "Other fields may be present"
-   },
-   "InboxItem": {
-    "type": "object",
-    "properties": {
-     "id": {
-      "type": "string",
-      "format": "uuid"
-     },
-     "kind": {
-      "type": "string",
-      "enum": [
-       "announcement",
-       "message"
-      ]
-     },
-     "title": {
-      "type": "string"
-     },
-     "description": {
-      "type": "string"
-     },
-     "publish_at": {
-      "type": "string",
-      "format": "date-time"
-     },
-     "read": {
-      "type": "boolean"
-     }
-    }
-   }
-  },
-  "responses": {
-   "Unauthorized": {
-    "description": "Missing, revoked or expired key",
-    "content": {
-     "application/json": {
-      "schema": {
-       "$ref": "#/components/schemas/Error"
-      }
-     }
-    }
-   },
-   "Forbidden": {
-    "description": "Not allowed (e.g. not the project's owner, or not available with an API key)",
-    "content": {
-     "application/json": {
-      "schema": {
-       "$ref": "#/components/schemas/Error"
-      }
-     }
-    }
-   },
-   "E400": {
-    "description": "The request isn't valid",
-    "content": {
-     "application/json": {
-      "schema": {
-       "$ref": "#/components/schemas/Error"
-      }
-     }
-    }
-   },
-   "E402": {
-    "description": "Not enough credit",
-    "content": {
-     "application/json": {
-      "schema": {
-       "$ref": "#/components/schemas/Error"
-      }
-     }
-    }
-   },
-   "E404": {
-    "description": "Not found (or not yours)",
-    "content": {
-     "application/json": {
-      "schema": {
-       "$ref": "#/components/schemas/Error"
-      }
-     }
-    }
-   },
-   "E409": {
-    "description": "Not possible in the current state",
-    "content": {
-     "application/json": {
-      "schema": {
-       "$ref": "#/components/schemas/Error"
-      }
-     }
-    }
-   },
-   "E429": {
-    "description": "Too soon: try again shortly",
-    "content": {
-     "application/json": {
-      "schema": {
-       "$ref": "#/components/schemas/Error"
-      }
-     }
-    }
-   }
-  }
- }
 }
