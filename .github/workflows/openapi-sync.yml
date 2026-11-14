@@ -28,7 +28,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       SPEC_URL: https://app.mhon.cloud/api/v1/openapi.json
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Fetch the live spec
         id: fetch
