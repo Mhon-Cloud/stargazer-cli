@@ -267,7 +267,8 @@ pub fn create(args: &ServerCreate, ctx: &Context, client: &Client) -> Result<(),
         print_object(ctx.format, &quote, QUOTE);
         return Ok(());
     }
-    if let Some(problem) = quote["coupon_error"].as_str() {
+    // The gateway answers "" (not null) when the coupon is fine or none was given.
+    if let Some(problem) = quote["coupon_error"].as_str().filter(|p| !p.is_empty()) {
         return Err(CliError::usage(format!("the coupon can't be used: {problem}")));
     }
     if quote["enough_credit"] == false {

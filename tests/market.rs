@@ -25,7 +25,7 @@ const COMPUTE_OPTIONS: &str = r#"{
 const CONTAINER_OPTIONS: &str = r#"{"free_available": true, "free_used": 0, "free_limit": 5,
   "free": {"cpu_cores": 1, "ram_gb": 1, "storage_gb": 5}, "zone_ids": ["z1"]}"#;
 const QUOTE: &str = r#"{"monthly": "450.00", "period_months": 1, "subtotal": "450.00", "total": "405.00",
-  "credit": "1000.00", "enough_credit": true, "coupon_error": null}"#;
+  "credit": "1000.00", "enough_credit": true, "coupon_error": ""}"#;
 
 fn stdout_json(output: &std::process::Output) -> Value {
     serde_json::from_slice(&output.stdout)
@@ -133,7 +133,7 @@ fn not_enough_credit_stops_before_ordering() {
     let mut api = mockito::Server::new();
     order_mocks(&mut api);
     api.mock("POST", "/api/v1/market/compute/quote")
-        .with_body(r#"{"total": "405.00", "credit": "10.00", "enough_credit": false, "coupon_error": null}"#)
+        .with_body(r#"{"total": "405.00", "credit": "10.00", "enough_credit": false, "coupon_error": ""}"#)
         .create();
     let out = Env::new()
         .signed_in(&api.url())
@@ -447,4 +447,38 @@ fn servers_can_be_made_from_the_projects_own_template() {
         out.status.success() && text.contains("pve-8d6d3523bb5b") && text.contains("no cloud-init drive"),
         "{text}"
     );
+}
+
+#[test]
+fn a_refused_coupon_stops_the_order_and_no_coupon_is_no_problem() {
+    let mut api = mockito::Server::new();
+    order_mocks(&mut api);
+    // The gateway reports a bad coupon in the quote, and "" when there's nothing wrong.
+    api.mock("POST", "/api/v1/market/compute/quote")
+        .match_body(Matcher::PartialJson(json!({ "coupon_code": "NOPE" })))
+        .with_body(r#"{"total": "405.00", "credit": "1000.00", "enough_credit": true, "coupon_error": "that coupon code doesn't exist"}"#)
+        .create();
+    let order = api.mock("POST", "/api/v1/market/compute/orders").expect(0).create();
+    let out = Env::new()
+        .signed_in(&api.url())
+        .args([
+            "servers",
+            "create",
+            "web-1",
+            "--os",
+            "ubuntu24.04",
+            "--cpu",
+            "2",
+            "--ram",
+            "4",
+            "--coupon",
+            "NOPE",
+            "--yes",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    let message = stderr_json(&out)["error"]["message"].as_str().unwrap().to_string();
+    assert!(message.contains("that coupon code doesn't exist"), "{message}");
+    order.assert();
 }
