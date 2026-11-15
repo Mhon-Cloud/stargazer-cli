@@ -20,6 +20,22 @@ pub struct Image {
     pub min_ram_gb: u32,
 }
 
+/// MB Java needs on top of its heap. The container's RAM is a hard limit with no swap, so a heap as big as
+/// the RAM gets a Java server (Minecraft) killed and restarted over and over.
+pub const JAVA_OVERHEAD_MB: u32 = 512;
+
+/// The Java heap (`MEMORY` / `MAX_MEMORY`) for `ram_gb` of RAM: three quarters of it, leaving at least
+/// JAVA_OVERHEAD_MB (1 GB -> 512M, 2 -> 1536M, 4 -> 3G). The console's order form uses the same rule.
+pub fn java_heap(ram_gb: u32) -> String {
+    let ram = ram_gb * 1024;
+    let mb = (ram * 3 / 4).min(ram.saturating_sub(JAVA_OVERHEAD_MB)).max(256);
+    if mb.is_multiple_of(1024) {
+        format!("{}G", mb / 1024)
+    } else {
+        format!("{mb}M")
+    }
+}
+
 /// The platform's own Ubuntu image (SSH + code-server), built on every container node.
 pub const DEV_IMAGE: &str = "mhon.local/ubuntu-dev:24.04";
 
@@ -39,7 +55,7 @@ pub const IMAGES: &[Image] = &[
         image: "itzg/minecraft-server:latest",
         name: "Minecraft Java server (TYPE=VANILLA|FORGE|NEOFORGE; OPS = your Minecraft name)",
         ports: &[(25565, "tcp")],
-        env: &[("EULA", "TRUE"), ("VERSION", "1.21.11"), ("TYPE", "VANILLA"), ("MEMORY", "2G"), ("MAX_MEMORY", "2G")],
+        env: &[("EULA", "TRUE"), ("VERSION", "1.21.11"), ("TYPE", "VANILLA")],
         required: &[],
         login: false,
         min_ram_gb: 2,
@@ -169,6 +185,12 @@ mod tests {
         assert_eq!(find("NGINX").unwrap().image, "nginx:1.27-alpine");
         assert_eq!(find(DEV_IMAGE).unwrap().alias, "ubuntu");
         assert!(find("nginx:latest").is_none());
+    }
+
+    #[test]
+    fn java_heap_leaves_room_for_java() {
+        let heaps: Vec<String> = [1, 2, 3, 4, 8].into_iter().map(java_heap).collect();
+        assert_eq!(heaps, ["512M", "1536M", "2304M", "3G", "6G"]);
     }
 
     #[test]

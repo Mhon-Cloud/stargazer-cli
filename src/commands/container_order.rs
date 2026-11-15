@@ -133,7 +133,7 @@ pub fn create(args: &ContainerCreate, ctx: &Context, client: &Client) -> Result<
     } else {
         args.ports.iter().map(|p| parse_port(p)).collect::<Result<Vec<_>, _>>()?
     };
-    let env = environment(known, &args.env, client)?;
+    let env = environment(known, &args.env, ram, client)?;
 
     let mut body = json!({
         "project_id": id_of(&project)?,
@@ -254,9 +254,14 @@ pub fn create(args: &ContainerCreate, ctx: &Context, client: &Client) -> Result<
     Ok(())
 }
 
-/// The image's default variables, the account's username as Minecraft's operator, then the
-/// order's own; the image's required ones must be set and no `YOUR_...` placeholder may stay.
-fn environment(known: Option<&Image>, given: &[String], client: &Client) -> Result<BTreeMap<String, String>, CliError> {
+/// The image's default variables, the account's username as Minecraft's operator and its Java heap for
+/// `ram_gb`, then the order's own; the image's required ones must be set and no `YOUR_...` placeholder may stay.
+fn environment(
+    known: Option<&Image>,
+    given: &[String],
+    ram_gb: u32,
+    client: &Client,
+) -> Result<BTreeMap<String, String>, CliError> {
     let mut env: BTreeMap<String, String> = BTreeMap::new();
     if let Some(i) = known {
         for (k, v) in i.env {
@@ -266,6 +271,10 @@ fn environment(known: Option<&Image>, given: &[String], client: &Client) -> Resu
             if let Some(name) = my_username(client)? {
                 env.insert("OPS".into(), name);
             }
+        }
+        if i.alias == "minecraft" {
+            env.insert("MEMORY".into(), catalog::java_heap(ram_gb));
+            env.insert("MAX_MEMORY".into(), catalog::java_heap(ram_gb));
         }
     }
     for pair in given {

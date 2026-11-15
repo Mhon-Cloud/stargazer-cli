@@ -213,7 +213,7 @@ fn minecraft_gets_a_direct_name_with_srv_and_the_username_as_operator() {
             "dns_port": 25565,
             "dns_protocol": "tcp",
             "dns_srv": "minecraft",
-            "env": { "EULA": "TRUE", "OPS": "Nathadon", "TYPE": "FORGE" },
+            "env": { "EULA": "TRUE", "OPS": "Nathadon", "TYPE": "FORGE", "MEMORY": "1536M", "MAX_MEMORY": "1536M" },
         })))
         .with_status(201)
         .with_body(r#"{"container": {"id": "c2", "name": "mc", "status": "pending"}}"#)
@@ -221,6 +221,28 @@ fn minecraft_gets_a_direct_name_with_srv_and_the_username_as_operator() {
     let out = Env::new()
         .signed_in(&api.url())
         .args(["containers", "create", "mc", "--image", "minecraft", "--env", "TYPE=FORGE", "--yes"])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    order.assert();
+}
+
+#[test]
+fn minecraft_heap_follows_the_ram_unless_set() {
+    let mut api = mockito::Server::new();
+    order_mocks(&mut api);
+    let order = api
+        .mock("POST", "/api/v1/market/containers")
+        .match_body(Matcher::PartialJson(json!({
+            "ram_gb": 4,
+            "env": { "MEMORY": "3G", "MAX_MEMORY": "2G" },
+        })))
+        .with_status(201)
+        .with_body(r#"{"container": {"id": "c3", "name": "mc", "status": "pending"}}"#)
+        .create();
+    let out = Env::new()
+        .signed_in(&api.url())
+        .args(["containers", "create", "mc", "--image", "minecraft", "--ram", "4", "--env", "MAX_MEMORY=2G", "--yes"])
         .output()
         .unwrap();
     assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
