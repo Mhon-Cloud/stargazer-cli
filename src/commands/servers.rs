@@ -59,6 +59,9 @@ pub fn run(cmd: &ServersCmd, ctx: &Context) -> Result<(), CliError> {
         }
         ServersCmd::Create(args) => compute_order::create(args, ctx, &client),
         ServersCmd::Options => compute_order::options(ctx, &client),
+        ServersCmd::Images { project, zone } => {
+            compute_order::images(ctx, &client, project.as_deref(), zone.as_deref())
+        }
         ServersCmd::Orders(cmd) => compute_order::orders(cmd, ctx, &client),
         ServersCmd::Start { target, wait } => act(ctx, &client, target, json!({ "action": "start" }), wait),
         ServersCmd::Stop { target, wait } => act(ctx, &client, target, json!({ "action": "stop" }), wait),

@@ -44,6 +44,7 @@ queued work is done. Every operation below is in `openapi/openapi.json` and `ope
 |---|---|---|
 | `servers list` / `show <server>` | `GET /api/v1/servers` | |
 | `servers options` | `GET /api/v1/market/compute/options` | OS images, plans, rates, limits |
+| `servers images [--project P] [--zone Z]` | `GET /api/v1/market/compute/images` | The project's own OS (its Proxmox templates) and other projects' public ones; `servers create --os` takes their name or id |
 | `servers create <name> --os OS (--plan P \| --cpu N --ram GB [--disk ssd:50]...) [--public-ip \| --dns-label L] [--username U] [--password-stdin \| --no-password] [--ssh-key K]... [--backup daily@03:00] [--period 1\|6\|12] [--coupon C] [--dry-run] --yes [--wait]` | `POST /api/v1/market/compute/quote`, `POST /api/v1/market/compute/orders` | Prepaid. `--dry-run` = the quote only. A random password is made (printed once, and in your inbox) unless you give one |
 | `servers orders list` | `GET /api/v1/market/compute/orders` | |
 | `servers orders cancel <order> --yes` | `POST .../orders/{id}/cancel` | A waiting order only; full refund |

@@ -63,7 +63,7 @@ console's Inventory and Market, but never top up, withdraw, or change your accou
 | Command | What it does |
 |---|---|
 | `stargazer login` / `logout` / `whoami` / `credit` | Sign in, the account, your credit |
-| `stargazer servers create\|options\|orders` | Order virtual machines (`--dry-run` prices, `--yes` pays) |
+| `stargazer servers create\|options\|images\|orders` | Order virtual machines (`--dry-run` prices, `--yes` pays; `images` = your project's own templates) |
 | `stargazer servers list\|show\|start\|stop\|rename\|resize\|delete\|renew\|auto-renew` | Manage them |
 | `stargazer containers create\|images\|options` | Order containers (free within 1 vCPU / 1 GB / 5 GB) |
 | `stargazer containers list\|show\|start\|stop\|logs\|delete` | Manage them |

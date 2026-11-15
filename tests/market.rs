@@ -395,3 +395,56 @@ fn deleting_a_project_needs_its_name_and_yes() {
     assert_eq!(out.status.code(), Some(2), "the name is case-sensitive, like the console");
     delete.assert();
 }
+
+const OWN_IMAGES: &str = r#"{"images": [
+  {"id": "i1", "os": "pve-8d6d3523bb5b", "name": "sonar-ai-debian12.0", "source": "proxmox", "state": "ready", "visibility": "private",
+   "availability_zone_id": "z1", "virtual_size_bytes": 42949672960},
+  {"id": "i2", "os": "pve-000000000002", "name": "no-cloud-init", "source": "proxmox", "state": "failed", "visibility": "private",
+   "availability_zone_id": "z1", "note": "no cloud-init drive"}
+], "community": [], "catalog": [], "quota": 5, "can_manage": true}"#;
+
+#[test]
+fn servers_can_be_made_from_the_projects_own_template() {
+    let mut api = mockito::Server::new();
+    order_mocks(&mut api);
+    api.mock("GET", "/api/v1/market/compute/images")
+        .match_query(Matcher::AllOf(vec![
+            Matcher::UrlEncoded("project_id".into(), "p1".into()),
+            Matcher::UrlEncoded("availability_zone_id".into(), "z1".into()),
+        ]))
+        .with_body(OWN_IMAGES)
+        .create();
+    // By name (any case): its OS id is sent, with a boot disk big enough for the template's 40 GB.
+    let quote = api
+        .mock("POST", "/api/v1/market/compute/quote")
+        .match_body(Matcher::PartialJson(json!({
+            "os": "pve-8d6d3523bb5b", "disks": [{"type": "ssd", "size_gb": 40}], "availability_zone_id": "z1"
+        })))
+        .with_body(QUOTE)
+        .create();
+    let out = Env::new()
+        .signed_in(&api.url())
+        .args(["servers", "create", "web-1", "--os", "SONAR-AI-DEBIAN12.0", "--cpu", "2", "--ram", "4", "--dry-run"])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    quote.assert();
+
+    // A template that isn't ready can't be ordered; the error lists what can.
+    let out = Env::new()
+        .signed_in(&api.url())
+        .args(["servers", "create", "web-1", "--os", "no-cloud-init", "--cpu", "2", "--ram", "4", "--dry-run"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    let message = stderr_json(&out)["error"]["message"].as_str().unwrap().to_string();
+    assert!(message.contains("sonar-ai-debian12.0") && message.contains("ubuntu24.04"), "{message}");
+
+    // `servers images` lists both, with why the second can't be used.
+    let out = Env::new().signed_in(&api.url()).args(["servers", "images", "--output", "table"]).output().unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        out.status.success() && text.contains("pve-8d6d3523bb5b") && text.contains("no cloud-init drive"),
+        "{text}"
+    );
+}

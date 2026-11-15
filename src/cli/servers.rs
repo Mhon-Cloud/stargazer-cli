@@ -23,6 +23,15 @@ pub enum ServersCmd {
     Create(Box<ServerCreate>),
     /// What an order can choose: OS images, plans, rates, limits
     Options,
+    /// A project's own OS images (its Proxmox templates) and other projects' public ones, for `create --os`
+    Images {
+        /// Project id or name (default: your personal Default project)
+        #[arg(long)]
+        project: Option<String>,
+        /// Location id or name (default: the only one that takes servers)
+        #[arg(long)]
+        zone: Option<String>,
+    },
     /// Your server orders (pending, active, suspended...)
     #[command(subcommand)]
     Orders(OrdersCmd),
@@ -108,7 +117,7 @@ pub struct ServerCreate {
     /// Location id or name (default: the only one, if there's one)
     #[arg(long)]
     pub zone: Option<String>,
-    /// OS image, as `servers options` lists it (e.g. ubuntu24.04)
+    /// OS image, as `servers options` lists it (e.g. ubuntu24.04), or one of the project's own from `servers images`
     #[arg(long)]
     pub os: String,
     /// A plan's name from `servers options` (sets CPU / RAM / disk / public IP; its discount applies)

@@ -1,5 +1,6 @@
 //! Ordering servers (Market -> Compute Instances): GET /api/v1/market/compute/options,
-//! POST .../quote (priced, nothing charged), POST/GET .../orders, POST .../orders/{id}/cancel.
+//! GET .../images (a project's own OS: its Proxmox templates), POST .../quote (priced, nothing charged),
+//! POST/GET .../orders, POST .../orders/{id}/cancel.
 //! The server prices everything; `create` shows its quote and pays only with --yes.
 
 use serde_json::{json, Value};
@@ -42,6 +43,16 @@ const ORDER_DETAIL: &[Column] = &[
     col("Note", "order.provision_note"),
     col("Username", "login.username"),
     col("Password", "login.password"),
+];
+
+const IMAGE_COLUMNS: &[Column] = &[
+    col("NAME", "name"),
+    col("OS", "os"),
+    col("KIND", "kind"),
+    col("STATE", "state"),
+    col("SHARED", "visibility"),
+    col("MIN_DISK_GB", "min_disk_gb"),
+    col("NOTE", "note"),
 ];
 
 const QUOTE: &[Column] = &[
@@ -103,6 +114,66 @@ pub fn options(ctx: &Context, client: &Client) -> Result<(), CliError> {
     Ok(())
 }
 
+/// The locations VPS orders can go to (`vps_zone_ids`; None from a gateway that doesn't say).
+fn vps_zones(options: &Value) -> Option<Vec<String>> {
+    options["vps_zone_ids"].as_array().map(|ids| ids.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+}
+
+/// GB needed to hold `bytes` (rounded up); None when unknown.
+fn min_disk_gb(bytes: &Value) -> Option<u64> {
+    bytes.as_u64().filter(|b| *b > 0).map(|b| b.div_ceil(1 << 30))
+}
+
+/// The project's OS a server (no VPC) can be made from in a location: its own ready Proxmox templates, then other
+/// projects' public ones. Each item: os, name, kind, state, visibility, min_disk_gb, note.
+fn own_os(images: &Value, zone_id: &str, ready_only: bool) -> Vec<Value> {
+    let in_zone = |v: &Value| v["availability_zone_id"].as_str() == Some(zone_id) || zone_id.is_empty();
+    let mut out = Vec::new();
+    for i in images["images"].as_array().into_iter().flatten() {
+        if i["source"] != "proxmox" || !in_zone(i) || (ready_only && i["state"] != "ready") {
+            continue;
+        }
+        out.push(json!({
+            "os": i["os"], "name": i["name"], "kind": "project template", "state": i["state"],
+            "visibility": i["visibility"], "min_disk_gb": min_disk_gb(&i["virtual_size_bytes"]), "note": i["note"],
+        }));
+    }
+    for c in images["community"].as_array().into_iter().flatten() {
+        if c["source"] != "proxmox" || !in_zone(c) {
+            continue;
+        }
+        out.push(json!({
+            "os": c["os"], "name": c["name"], "kind": "community template", "state": "ready",
+            "visibility": "public (another project's)", "min_disk_gb": min_disk_gb(&c["virtual_size_bytes"]), "note": Value::Null,
+        }));
+    }
+    out
+}
+
+fn images_of(client: &Client, project_id: &str, zone_id: &str) -> Result<Value, CliError> {
+    client.get_query("/api/v1/market/compute/images", &[("project_id", project_id), ("availability_zone_id", zone_id)])
+}
+
+/// `servers images`: the project's own OS for servers (its Proxmox templates) and other projects' public ones.
+pub fn images(ctx: &Context, client: &Client, project: Option<&str>, zone: Option<&str>) -> Result<(), CliError> {
+    let options = client.get("/api/v1/market/compute/options")?;
+    let project = order_project(client, project)?;
+    let zone = order_zone(client, zone, vps_zones(&options).as_deref())?;
+    let zone_id = id_of(&zone)?.to_string();
+    let answer = images_of(client, id_of(&project)?, &zone_id)?;
+    if ctx.format == Format::Json {
+        print_json(&answer);
+        return Ok(());
+    }
+    print_list(
+        ctx.format,
+        &own_os(&answer, &zone_id, false),
+        IMAGE_COLUMNS,
+        "No own OS images here: an administrator puts a Proxmox template (with a cloud-init drive) in the project's pool.",
+    );
+    Ok(())
+}
+
 pub fn orders(cmd: &OrdersCmd, ctx: &Context, client: &Client) -> Result<(), CliError> {
     match cmd {
         OrdersCmd::List => {
@@ -123,8 +194,9 @@ pub fn create(args: &ServerCreate, ctx: &Context, client: &Client) -> Result<(),
     let options = client.get("/api/v1/market/compute/options")?;
     let project = order_project(client, args.project.as_deref())?;
     let project_id = id_of(&project)?.to_string();
-    let zone = order_zone(client, args.zone.as_deref(), None)?;
-    let os = pick_os(&options, &args.os)?;
+    let zone = order_zone(client, args.zone.as_deref(), vps_zones(&options).as_deref())?;
+    let zone_id = id_of(&zone)?.to_string();
+    let (os, os_min_gb) = pick_os(client, &options, &project_id, &zone_id, &args.os)?;
 
     let plan = match &args.plan {
         Some(name) => Some(pick_plan(&options["packages"], name)?),
@@ -140,7 +212,8 @@ pub fn create(args: &ServerCreate, ctx: &Context, client: &Client) -> Result<(),
     } else if let Some(p) = &plan {
         vec![json!({ "type": p["storage_type"].as_str().unwrap_or("ssd"), "size_gb": p["storage_gb"] })]
     } else {
-        let min = options["limits"]["min_disk_gb"].as_u64().unwrap_or(10).max(20);
+        // At least the template's disk (the server refuses a smaller boot disk).
+        let min = options["limits"]["min_disk_gb"].as_u64().unwrap_or(10).max(20).max(os_min_gb.unwrap_or(0));
         vec![json!({ "type": "ssd", "size_gb": min })]
     };
     let public_ip = args.public_ip || plan.as_ref().is_some_and(|p| p["public_ip"] == true);
@@ -169,7 +242,7 @@ pub fn create(args: &ServerCreate, ctx: &Context, client: &Client) -> Result<(),
         "ram_gb": ram,
         "disks": disks,
         "os": os,
-        "availability_zone_id": id_of(&zone)?,
+        "availability_zone_id": zone_id,
         "public_ip": public_ip,
         "period_months": args.period,
         "username": username,
@@ -245,19 +318,33 @@ pub fn create(args: &ServerCreate, ctx: &Context, client: &Client) -> Result<(),
     Ok(())
 }
 
-/// The OS id for a name or id the user typed (case-insensitive), or a usage error listing them.
-fn pick_os(options: &Value, wanted: &str) -> Result<String, CliError> {
+/// The OS id for a name or id the user typed (case-insensitive): the platform's images, else the project's own ready
+/// ones in the location (`servers images`), with the smallest boot disk they need (GB); or a usage error listing them.
+fn pick_os(
+    client: &Client,
+    options: &Value,
+    project_id: &str,
+    zone_id: &str,
+    wanted: &str,
+) -> Result<(String, Option<u64>), CliError> {
+    let matches = |o: &Value| {
+        [&o["id"], &o["os"], &o["name"]].iter().any(|v| v.as_str().is_some_and(|s| s.eq_ignore_ascii_case(wanted)))
+    };
     let list = options["os"].as_array().cloned().unwrap_or_default();
-    let found = list
-        .iter()
-        .find(|o| [&o["id"], &o["name"]].iter().any(|v| v.as_str().is_some_and(|s| s.eq_ignore_ascii_case(wanted))));
-    match found {
-        Some(o) => Ok(o["id"].as_str().or(o["name"].as_str()).unwrap_or(wanted).to_string()),
-        None => {
-            let names: Vec<&str> = list.iter().filter_map(|o| o["name"].as_str()).collect();
-            Err(CliError::usage(format!("no OS image \"{wanted}\"; choose one of: {}", names.join(", "))))
-        }
+    if let Some(o) = list.iter().find(|o| matches(o)) {
+        return Ok((o["id"].as_str().or(o["name"].as_str()).unwrap_or(wanted).to_string(), None));
     }
+    // A gateway without the images list (older) just has the platform's.
+    let own = images_of(client, project_id, zone_id).map(|a| own_os(&a, zone_id, true)).unwrap_or_default();
+    if let Some(o) = own.iter().find(|o| matches(o)) {
+        return Ok((o["os"].as_str().unwrap_or(wanted).to_string(), o["min_disk_gb"].as_u64()));
+    }
+    let names: Vec<&str> =
+        list.iter().filter_map(|o| o["name"].as_str()).chain(own.iter().filter_map(|o| o["name"].as_str())).collect();
+    Err(CliError::usage(format!(
+        "no OS image \"{wanted}\" in this project and location; choose one of: {}",
+        names.join(", ")
+    )))
 }
 
 /// A plan by name (case-insensitive) from options' `packages` / `container_packages`.

@@ -1350,6 +1350,99 @@
     }
    }
   },
+  "/api/v1/market/compute/images": {
+   "get": {
+    "tags": [
+     "Market"
+    ],
+    "summary": "A project's own operating systems (Proxmox templates and imports) and others' public ones",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "images": {
+           "type": "array",
+           "items": {
+            "$ref": "#/components/schemas/OSImage"
+           }
+          },
+          "community": {
+           "type": "array",
+           "items": {
+            "$ref": "#/components/schemas/CommunityOS"
+           }
+          },
+          "catalog": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "key": {
+              "type": "string"
+             },
+             "distro": {
+              "type": "string"
+             },
+             "release": {
+              "type": "string"
+             }
+            }
+           }
+          },
+          "quota": {
+           "type": "integer",
+           "description": "Imports the project may have"
+          },
+          "can_manage": {
+           "type": "boolean"
+          }
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "$ref": "#/components/responses/Unauthorized"
+     },
+     "403": {
+      "$ref": "#/components/responses/Forbidden"
+     },
+     "400": {
+      "$ref": "#/components/responses/E400"
+     },
+     "404": {
+      "$ref": "#/components/responses/E404"
+     }
+    },
+    "description": "Any member of the project. Use an entry's os in an order (ready ones, in their location only).",
+    "parameters": [
+     {
+      "name": "project_id",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "The project"
+     },
+     {
+      "name": "availability_zone_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "format": "uuid"
+      },
+      "description": "A location: its catalog and the community OS there"
+     }
+    ]
+   }
+  },
   "/api/v1/market/compute/quote": {
    "post": {
     "tags": [
@@ -3950,7 +4043,8 @@
          "type": "string",
          "enum": [
           "agent",
-          "cloud-init"
+          "cloud-init",
+          "glidex"
          ]
         }
        }
@@ -4061,6 +4155,26 @@
        }
       },
       "description": "Its Market order; null = not bought in Market",
+      "nullable": true
+     },
+     "in_vpc": {
+      "type": "boolean",
+      "description": "A VPC server: start / stop / resize / delete only"
+     },
+     "subnet": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string",
+        "format": "uuid"
+       },
+       "name": {
+        "type": "string"
+       },
+       "cidr": {
+        "type": "string"
+       }
+      },
       "nullable": true
      }
     }
@@ -4433,6 +4547,16 @@
        "type": "string",
        "format": "uuid"
       }
+     },
+     "vpc_id": {
+      "type": "string",
+      "description": "A VPC of the project: the server goes in it (no public IP, auto backup or extra disk there); omit for a VPS",
+      "format": "uuid"
+     },
+     "subnet_id": {
+      "type": "string",
+      "description": "A subnet of vpc_id",
+      "format": "uuid"
      }
     },
     "required": [
@@ -4625,6 +4749,15 @@
      "provisioned_at": {
       "type": "string",
       "format": "date-time",
+      "nullable": true
+     },
+     "vpc": {
+      "type": "string",
+      "description": "The VPC's name; null = a VPS",
+      "nullable": true
+     },
+     "subnet": {
+      "type": "string",
       "nullable": true
      }
     }
@@ -5003,6 +5136,41 @@
        }
       }
      },
+     "vps_zone_ids": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "description": "A location that takes orders without vpc_id (it has a legacy Proxmox host)",
+       "format": "uuid"
+      }
+     },
+     "vpc": {
+      "type": "object",
+      "properties": {
+       "zone_ids": {
+        "type": "array",
+        "items": {
+         "type": "string",
+         "format": "uuid"
+        }
+       },
+       "os": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "type": "string"
+          },
+          "name": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "description": "Orders with vpc_id: the locations that take them and their OS choices"
+     },
      "rates": {
       "type": "object",
       "properties": {
@@ -5125,6 +5293,132 @@
       "example": "350.00"
      }
     }
+   },
+   "OSImage": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid"
+     },
+     "os": {
+      "type": "string",
+      "description": "What an order sends as os once ready (pve-... = a Proxmox template, for orders without vpc_id; mc-img-... = an import, for orders with vpc_id)"
+     },
+     "name": {
+      "type": "string"
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "catalog",
+       "url",
+       "proxmox"
+      ]
+     },
+     "catalog_key": {
+      "type": "string",
+      "nullable": true
+     },
+     "url": {
+      "type": "string",
+      "nullable": true
+     },
+     "state": {
+      "type": "string",
+      "enum": [
+       "pending",
+       "downloading",
+       "verifying",
+       "ready",
+       "failed"
+      ]
+     },
+     "visibility": {
+      "type": "string",
+      "enum": [
+       "private",
+       "public"
+      ]
+     },
+     "note": {
+      "type": "string",
+      "description": "Why it waits or failed",
+      "nullable": true
+     },
+     "virtual_size_bytes": {
+      "type": "integer",
+      "description": "The boot disk must be at least this",
+      "nullable": true
+     },
+     "verified": {
+      "type": "boolean",
+      "nullable": true
+     },
+     "availability_zone_id": {
+      "type": "string",
+      "description": "Its location: orders there only",
+      "format": "uuid",
+      "nullable": true
+     },
+     "cloud_init": {
+      "type": "boolean",
+      "description": "Proxmox templates: has a cloud-init drive",
+      "nullable": true
+     },
+     "shared_storage": {
+      "type": "boolean",
+      "description": "Proxmox templates: false = servers are made on its own node",
+      "nullable": true
+     }
+    }
+   },
+   "CommunityOS": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid"
+     },
+     "os": {
+      "type": "string",
+      "description": "What an order sends as os"
+     },
+     "name": {
+      "type": "string"
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "catalog",
+       "url",
+       "proxmox"
+      ]
+     },
+     "catalog_key": {
+      "type": "string",
+      "nullable": true
+     },
+     "origin": {
+      "type": "string",
+      "description": "A URL import's host name",
+      "nullable": true
+     },
+     "verified": {
+      "type": "boolean",
+      "nullable": true
+     },
+     "virtual_size_bytes": {
+      "type": "integer",
+      "nullable": true
+     },
+     "availability_zone_id": {
+      "type": "string",
+      "format": "uuid",
+      "nullable": true
+     }
+    },
+    "description": "Another project's public OS (who shared it isn't shown)"
    },
    "ContainerOptions": {
     "type": "object",

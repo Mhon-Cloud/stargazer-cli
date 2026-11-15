@@ -157,8 +157,9 @@
       "method": "GET",
       "path": "/api/v1/market/compute/options",
       "used_by": [
-        "servers options|create",
-        "containers options|create"
+        "containers options|create",
+        "servers images",
+        "servers options|create"
       ],
       "response": [
         "os",
@@ -166,7 +167,30 @@
         "limits",
         "credit",
         "container_rates",
-        "container_packages"
+        "container_packages",
+        "vps_zone_ids"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/market/compute/images",
+      "used_by": [
+        "servers images",
+        "servers create (--os of the project's own)"
+      ],
+      "response": [
+        "images[].os",
+        "images[].name",
+        "images[].source",
+        "images[].state",
+        "images[].visibility",
+        "images[].availability_zone_id",
+        "images[].virtual_size_bytes",
+        "community[].os",
+        "community[].name",
+        "community[].source",
+        "community[].availability_zone_id",
+        "community[].virtual_size_bytes"
       ]
     },
     {
