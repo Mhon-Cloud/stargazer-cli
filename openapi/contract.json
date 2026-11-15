@@ -184,6 +184,7 @@
         "images[].source",
         "images[].state",
         "images[].visibility",
+        "images[].note",
         "images[].availability_zone_id",
         "images[].virtual_size_bytes",
         "community[].os",

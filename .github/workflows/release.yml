@@ -19,7 +19,7 @@ jobs:
   check-version:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: The tag matches Cargo.toml
         run: |
           version="$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)"
@@ -43,19 +43,19 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: stargazer-*
           path: dist
           merge-multiple: true
       - run: ls -l dist
       - name: Build provenance (verify with `gh attestation verify <file> -R Mhon-Cloud/stargazer-cli`)
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             dist/*.tar.gz
             dist/*.zip
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: dist/*
           generate_release_notes: true
@@ -73,7 +73,7 @@ jobs:
     env:
       STARGAZER_VERSION: ${{ github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: install.sh
         if: runner.os != 'Windows'
         run: |

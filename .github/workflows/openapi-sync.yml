@@ -5,8 +5,9 @@ name: OpenAPI sync
 # everything openapi/contract.json needs. Contract broken = this run fails and the PR says what to fix.
 # The platform runs the same contract check before deploying the gateway, so a break should be rare.
 #
-# Needs: Settings -> Actions -> General -> "Allow GitHub Actions to create and approve pull requests" (else an
-# issue is opened instead). PRs opened by Actions don't start CI themselves: close and reopen the PR to run it.
+# Needs: Settings -> Actions -> General -> "Allow GitHub Actions to create and approve pull requests". Without it
+# the changes go in ONE issue, updated every day (never a new one per day), which is closed once main's copy
+# matches the live spec again. PRs opened by Actions don't start CI themselves: close and reopen the PR to run it.
 on:
   schedule:
     - cron: "0 1 * * *"
@@ -27,8 +28,9 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       SPEC_URL: https://app.mhon.cloud/api/v1/openapi.json
+      ISSUE_TITLE: "Refresh the API spec ("
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Fetch the live spec
         id: fetch
@@ -42,6 +44,16 @@ jobs:
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # The issues this workflow opened when it couldn't open a PR: nothing left to do once the copy is current.
+      - name: Close the sync issues when the spec matches
+        if: steps.fetch.outputs.changed == 'false'
+        run: |
+          gh issue list --state open --limit 200 --json number,title \
+            -q ".[] | select(.title | startswith(\"$ISSUE_TITLE\")) | .number" |
+            while read -r n; do
+              gh issue close "$n" --comment "openapi/openapi.json on main matches the live API again."
+            done
 
       - name: Summarise the changes
         if: steps.fetch.outputs.changed == 'true'
@@ -98,14 +110,34 @@ jobs:
           git commit -m "Refresh openapi/openapi.json from the live API"
           git push --force origin openapi-sync
           { echo "The live API's spec ($SPEC_URL) changed. Opened by the OpenAPI sync workflow."; echo; cat summary.md
-            echo; echo "Next: add CLI commands for new operations (docs/roadmap.md), fix anything broken, merge. Close and reopen this PR to run CI."; } > body.md
-          title="Refresh the API spec ($(date -u +%Y-%m-%d))"
+            echo; echo "Next: add CLI commands for new operations (docs/roadmap.md), fix anything broken, merge."; } > body.md
+          title="$ISSUE_TITLE$(date -u +%Y-%m-%d))"
+          issues=$(gh issue list --state open --limit 200 --json number,title \
+            -q ".[] | select(.title | startswith(\"$ISSUE_TITLE\")) | .number")
           if gh pr view openapi-sync --json state -q .state 2>/dev/null | grep -q OPEN; then
+            echo "Close and reopen this PR to run CI." >> body.md
             gh pr edit openapi-sync --title "$title" --body-file body.md
-          elif ! gh pr create --head openapi-sync --base main --title "$title" --body-file body.md; then
-            echo "::warning::couldn't open a PR (allow Actions to create PRs in the repo settings); opening an issue"
-            gh issue create --title "$title" --body-file body.md
+            note="Followed in the openapi-sync pull request."
+          elif (cp body.md pr.md; echo "Close and reopen this PR to run CI." >> pr.md
+                gh pr create --head openapi-sync --base main --title "$title" --body-file pr.md); then
+            note="Followed in the openapi-sync pull request."
+          else
+            # One issue, kept up to date: the newest open one is edited, older ones are closed.
+            echo "::warning::couldn't open a PR (allow Actions to create PRs in the repo settings); using an issue"
+            echo "The new copy is on the \`openapi-sync\` branch: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/main...openapi-sync" >> body.md
+            keep=$(echo "$issues" | head -n 1)
+            if [ -n "$keep" ]; then
+              gh issue edit "$keep" --title "$title" --body-file body.md
+              issues=$(echo "$issues" | tail -n +2)
+              note="Same change as #$keep, which is kept up to date."
+            else
+              gh issue create --title "$title" --body-file body.md
+              issues=""
+            fi
           fi
+          for n in $issues; do
+            gh issue close "$n" --reason "not planned" --comment "$note"
+          done
 
       - name: Fail when the contract is broken
         if: steps.contract.outputs.ok == 'false'

@@ -334,8 +334,12 @@ fn pick_os(
     if let Some(o) = list.iter().find(|o| matches(o)) {
         return Ok((o["id"].as_str().or(o["name"].as_str()).unwrap_or(wanted).to_string(), None));
     }
-    // A gateway without the images list (older) just has the platform's.
-    let own = images_of(client, project_id, zone_id).map(|a| own_os(&a, zone_id, true)).unwrap_or_default();
+    // A gateway without the images list (older, 404) just has the platform's; any other failure is the user's to see.
+    let own = match images_of(client, project_id, zone_id) {
+        Ok(answer) => own_os(&answer, zone_id, true),
+        Err(e) if e.kind == ErrorKind::NotFound => Vec::new(),
+        Err(e) => return Err(e),
+    };
     if let Some(o) = own.iter().find(|o| matches(o)) {
         return Ok((o["os"].as_str().unwrap_or(wanted).to_string(), o["min_disk_gb"].as_u64()));
     }
