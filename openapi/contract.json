@@ -178,6 +178,10 @@
         "servers images",
         "servers create (--os of the project's own)"
       ],
+      "query": [
+        "project_id",
+        "availability_zone_id"
+      ],
       "response": [
         "images[].os",
         "images[].name",
